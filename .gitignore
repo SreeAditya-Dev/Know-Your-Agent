@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# secrets — never commit test keys
+.env
+.env.local
+
+# local state
+*.db
+*.sqlite3
+data/
+reports/*.json

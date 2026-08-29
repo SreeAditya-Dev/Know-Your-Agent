@@ -44,4 +44,8 @@ Strictly defensive. Every attack in the red-team suite runs against our own sand
 
 ## Status
 
-Day 0 — design frozen, implementation beginning. See [`../PLAN.md`](../PLAN.md) for the day-by-day build plan and the cut order.
+**Day 1 complete.** The verification core (G0–G3, adjudication, idempotent decision cache) is built, with 94 tests passing and attack classes A1–A6 blocked end to end. Measured data-plane p99 is 9.8 ms against a 50 ms budget.
+
+Design commitment 1 is enforced structurally rather than by convention: the evidence lattice in `kya/evidence.py` is a genuine partial order, and `test_evidence_lattice.py` asserts that a SELF/SIGN-class verdict — which is all a model can declare — cannot satisfy a REC-class floor at any confidence.
+
+Still to come: G4 and the Reserve Pay block guard (Day 2), obligation ledger with Razorpay anchoring (Day 3), clearing mesh and reversal (Day 4), red-team corpus and baselines (Day 5). See [`../PLAN.md`](../PLAN.md) for the day-by-day plan and cut order.

@@ -109,9 +109,41 @@ A correctly identified, correctly authorized agent can still substitute a cart, 
 
 ## Status
 
-**Day 0 — design frozen, implementation beginning.**
+**Day 1 complete — verification core built and tested.**
+
+| Component | State |
+|---|---|
+| Evidence lattice (RAILS partial order) | ✅ implemented, poset laws tested |
+| G0 transport & replay | ✅ |
+| G1 identity (RFC 9421 / Ed25519) | ✅ |
+| G2 mandate chain (AP2-shaped) | ✅ |
+| G3 cart binding + field-level drift | ✅ |
+| G6 adjudication + explainer | ✅ |
+| Idempotent decision cache | ✅ |
+| G4 bounded envelope · Reserve Pay guard | Day 2 |
+| Obligation ledger + Razorpay anchoring | Day 3 |
+| Clearing mesh, finality, reversal | Day 4 |
+| Red-team corpus + baselines | Day 5 |
+
+**94 tests passing.** Attack classes A1–A6 blocked end to end; A7–A11 arrive with G4 and the clearing layer.
+
+Measured data-plane latency over 2,000 requests, LLM path absent by construction:
+
+| p50 | p95 | p99 | budget |
+|---|---|---|---|
+| 3.6 ms | 6.2 ms | **9.8 ms** | 50 ms |
 
 Reserve Pay / SBMD is a **labelled local simulation**; NPCI's Unified Agent Protocol has not launched and requires RBI approval. Razorpay Orders, Payments, Refunds and Webhooks are real, against `rzp_test_` keys. See [docs/07](docs/07-limitations.md) for the full honest scoping.
+
+## Running it
+
+```bash
+pip install -e ".[dev]"
+pytest tests/ -q
+```
+
+No network or Razorpay credentials are needed for the current test suite — the
+agent directory, principals and rails are all in-process fixtures.
 
 ## Ethics
 
