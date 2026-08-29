@@ -1,1 +1,122 @@
 # Know-Your-Agent
+
+**An obligation-clearing gateway for agentic commerce on Razorpay rails.**
+
+> Identity says who called. A mandate says they were allowed.
+> Neither says the obligation was satisfied. KYA closes that loop.
+
+Razorpay AI Buildathon 2026 · **Track 01 — AI Growth & Agentic Commerce**
+
+---
+
+## The problem
+
+AI agents are becoming buyers. Every shipping standard answers two questions — *is this agent who it claims to be* (Visa Trusted Agent Protocol, Cloudflare Web Bot Auth) and *was it authorized by a human* (AP2, ACP). None answers the third:
+
+**Was the obligation the merchant took on actually satisfied?**
+
+The RAILS paper ([arXiv 2606.08790](https://arxiv.org/html/2606.08790), Jun 2026) puts it precisely: *"Payment settles value transfer. Clearing settles obligation state."* It is a protocol proposal with no implementation.
+
+On **UPI Reserve Pay**, built on NPCI's Single Block Multi Debit, this is not theoretical. A user blocks funds once, and then — in Razorpay's own words — *"the merchant can debit multiple times without requiring fresh authentication for each transaction."* The boundary is amount, time and merchant scope. **Nothing binds an individual debit to an obligation actually incurred.**
+
+Unit 42 has documented the matching attack: agents triggering refunds without a real shipping scan, and bot farms initiating ten thousand returns in an hour to drain a retailer's cash before a human notices.
+
+And there is an asymmetry nobody has closed. Razorpay Agent Studio has real guardrails — discount ceilings, approval gates, review-first mode, one-tap disable. Every one governs an **outbound** agent, one the merchant employs. Nothing governs an **inbound** agent: a third-party AI buyer the merchant does not control, cannot configure, and cannot switch off.
+
+## What this is
+
+A merchant-side gateway in front of the Razorpay Orders/Payments surface:
+
+1. **Verifies the inbound agent** — RFC 9421 signatures, TAP / Web Bot Auth compatible, so existing agents work unmodified.
+2. **Verifies the mandate chain** — AP2-shaped intent and cart mandates, and critically that the cart being *charged* is the cart that was *signed*.
+3. **Bounds the agent** — velocity and spend caps, a refund-rate circuit breaker, and a per-debit obligation check on Reserve Pay blocks.
+4. **Mints an obligation receipt** before capture, with its hash anchored into the Razorpay order record itself.
+5. **Clears the obligation** against graded evidence, and reverses provisional settlements that fail.
+6. **Solves cold start** with a trust ladder, so a new legitimate agent is bounded rather than blocked.
+
+## Design commitments
+
+Each is testable, and each is tested.
+
+- **No LLM output ever moves money.** The inline path is deterministic. Models run only in the async control plane, and their verdicts carry the lowest evidence class — structurally unable to clear a settlement alone.
+- **Fail closed on evidence of wrongdoing, fail soft on absence of evidence.** A bad signature denies. An unreachable key directory degrades to step-up.
+- **Decisions are idempotent.** The same request returns the same cached decision, never a re-evaluation.
+- **The audit trail is anchored outside our own database**, in the Razorpay order record, so it is verifiable by someone who does not trust us.
+- **A false positive is a bounded sale, not a lost one.**
+- **The evaluation corpus is frozen and hash-committed before any detector tuning.**
+
+## Architecture
+
+```
+   AI Buyer Agent (untrusted — ChatGPT / Claude / Perplexity / unknown operator)
+                        │  signed HTTP (RFC 9421) + AP2-shaped mandate bundle
+                        ▼
+╔═══════════════════════════════════════════════════════════════════════════╗
+║  KYA GATEWAY                                                              ║
+║                                                                           ║
+║  DATA PLANE — inline, deterministic, no LLM, p99 budget 50 ms             ║
+║    G0 Transport/Replay → G1 Identity → G2 Mandate Chain → G3 Cart Binding ║
+║    → G4 Bounded Envelope → G5 Content Threat → G6 Adjudicate              ║
+║       ⇒ ALLOW | STEP_UP | QUARANTINE | DENY  (+ reason codes)             ║
+║                                                                           ║
+║  OBLIGATION LEDGER — append-only, hash-chained                            ║
+║    mint Obligation Receipt ⟶ anchor its hash into Razorpay order.notes    ║
+║                                                                           ║
+║  CONTROL PLANE — async, LLM-assisted, off the money path                  ║
+║    Evidence Envelope → Verification Mesh → Clearing Decision (PROVISIONAL)║
+║    → Finality Rules → FINAL | DISPUTED → Settlement / Reversal            ║
+║    → Clearing Passport update ⟶ feeds G4 on the agent's next request      ║
+╚════════════════════╤═══════════════════════════════╤══════════════════════╝
+                     ▼                               ▼
+        Razorpay test-mode REST              Reserve Pay Block Ledger
+        Orders / Payments / Refunds          (SIMULATED — labelled as such)
+        + razorpay-mcp-server
+```
+
+## What identity-only defence misses
+
+The core measurement. **B1 is the shipped state of the art** — what a merchant integrating Visa TAP gets today.
+
+| Attack | B0 none | B1 identity-only | B2 + mandate | B3 full KYA |
+|---|:--:|:--:|:--:|:--:|
+| agent impersonation | ✗ | ✓ | ✓ | ✓ |
+| key substitution | ✗ | ✓ | ✓ | ✓ |
+| replay | ✗ | ✓ | ✓ | ✓ |
+| mandate substitution | ✗ | ✗ | ✓ | ✓ |
+| price tampering | ✗ | ✗ | ✓ | ✓ |
+| scope escalation | ✗ | ✗ | ~ | ✓ |
+| refund flood | ✗ | ✗ | ✗ | ✓ |
+| indirect prompt injection | ✗ | ✗ | ✗ | ✓ |
+| counterfeit callback | ✗ | ✗ | ✗ | ✓ |
+| **Reserve Pay block drain** | ✗ | ✗ | ✗ | ✓ |
+| **obligation mismatch** | ✗ | ✗ | ✗ | ✓ |
+
+A correctly identified, correctly authorized agent can still substitute a cart, flood refunds, drain a block, and take delivery of something other than what was promised.
+
+*(Measured block rates, precision/recall and false-positive cost replace these checkmarks once the eval runs — see [docs/05](docs/05-evaluation.md).)*
+
+## Documentation
+
+| # | Document |
+|---|---|
+| 01 | [The Problem](docs/01-problem.md) — why merchant-side defence is the open gap |
+| 02 | [Architecture](docs/02-architecture.md) — two planes, seven gates, degradation policy, latency budget |
+| 03 | [Threat Model](docs/03-threat-model.md) — 11 attack classes and which gate catches each |
+| 04 | [Obligation Clearing](docs/04-obligation-clearing.md) — receipts, evidence grading, finality, reversal |
+| 05 | [Evaluation](docs/05-evaluation.md) — corpus, anti-rigging protocol, baselines, metrics |
+| 06 | [API Reference](docs/06-api.md) — endpoints, headers, decision envelope, reason codes |
+| 07 | [Limitations](docs/07-limitations.md) — what is simulated, what we do not do, exception list |
+
+## Status
+
+**Day 0 — design frozen, implementation beginning.**
+
+Reserve Pay / SBMD is a **labelled local simulation**; NPCI's Unified Agent Protocol has not launched and requires RBI approval. Razorpay Orders, Payments, Refunds and Webhooks are real, against `rzp_test_` keys. See [docs/07](docs/07-limitations.md) for the full honest scoping.
+
+## Ethics
+
+Strictly defensive. Every attack scenario runs against our own sandbox merchant with our own test-mode keys. No weaponisable payloads against live protocol implementations are published here.
+
+## References
+
+RAILS ([arXiv 2606.08790](https://arxiv.org/html/2606.08790)) · SoK: Security of Autonomous LLM Agents in Agentic Commerce ([arXiv 2604.15367](https://arxiv.org/pdf/2604.15367)) · [Visa Trusted Agent Protocol](https://github.com/visa/trusted-agent-protocol) · [Cloudflare Web Bot Auth](https://blog.cloudflare.com/web-bot-auth/) · [AP2](https://ap2-protocol.org/specification/) · [ACP](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol) · [Unit 42: Retail Fraud in the Age of Agentic AI](https://unit42.paloaltonetworks.com/retail-fraud-agentic-ai/) · [DataDome AI Traffic Report](https://datadome.co/threat-research/ai-traffic-report/) · [Razorpay UPI Reserve Pay](https://razorpay.com/blog/upi-reserve-pay/) · [razorpay-mcp-server](https://github.com/razorpay/razorpay-mcp-server)

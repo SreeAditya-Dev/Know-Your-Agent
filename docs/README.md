@@ -1,0 +1,47 @@
+# Know-Your-Agent — Documentation
+
+**An obligation-clearing gateway for agentic commerce on Razorpay rails.**
+
+> Identity says who called. A mandate says they were allowed.
+> Neither says the obligation was satisfied. KYA closes that loop.
+
+Razorpay AI Buildathon 2026 · **Track 01 — AI Growth & Agentic Commerce**
+
+---
+
+## Read in this order
+
+| # | Document | What it answers |
+|---|---|---|
+| 01 | [The Problem](01-problem.md) | Why merchant-side defence is the open gap, and why identity verification alone no longer is |
+| 02 | [Architecture](02-architecture.md) | The two planes, the seven gates, degradation policy, latency budget |
+| 03 | [Threat Model](03-threat-model.md) | 11 attack classes, which gate catches each, which baselines miss them |
+| 04 | [Obligation Clearing](04-obligation-clearing.md) | Receipts, evidence grading, the verification mesh, finality and reversal |
+| 05 | [Evaluation](05-evaluation.md) | Corpus design, the anti-rigging protocol, baselines, metrics we report |
+| 06 | [API Reference](06-api.md) | Gateway endpoints, request headers, decision envelope, reason codes |
+| 07 | [Limitations](07-limitations.md) | What KYA does not do, what is simulated, the honest exception list |
+
+---
+
+## The one-paragraph version
+
+AI agents are becoming buyers. Every shipping standard — Visa's Trusted Agent Protocol, Cloudflare's Web Bot Auth, Google's AP2, OpenAI and Stripe's ACP — answers two questions: *is this agent who it claims to be*, and *was it authorized by a human*. None answers the third: **was the obligation the merchant took on actually satisfied?** On UPI Reserve Pay, where a single consent authorizes many debits without fresh authentication, that gap is a live cash-drain vector. KYA is a merchant-side gateway that verifies inbound agents, binds every debit to a signed obligation receipt anchored in Razorpay's own order record, verifies satisfaction against graded evidence before settlement becomes final, and reverses what fails.
+
+## Design commitments
+
+These are the claims the implementation is accountable to. Each is testable, and each is tested.
+
+1. **No LLM output ever moves money.** The inline decision path is fully deterministic. Models run only in the async control plane, and their verdicts carry the lowest evidence class — structurally unable to clear a settlement alone.
+2. **Fail-closed on evidence of wrongdoing, fail-soft on absence of evidence.** A bad signature denies. An unreachable key directory degrades to step-up, it does not deny.
+3. **Decisions are idempotent.** The same request returns the same cached decision, never a re-evaluation.
+4. **The audit trail is anchored outside our own database** — in the Razorpay order record — so it is verifiable by someone who does not trust us.
+5. **A false positive is a bounded sale, not a lost one.** New agents are throttled onto a trust ladder rather than blocked.
+6. **The evaluation corpus is frozen and hash-committed before any detector tuning.**
+
+## Scope and ethics
+
+Strictly defensive. Every attack in the red-team suite runs against our own sandbox merchant with our own test-mode keys. No weaponisable payloads against live protocol implementations are published in this repository.
+
+## Status
+
+Day 0 — design frozen, implementation beginning. See [`../PLAN.md`](../PLAN.md) for the day-by-day build plan and the cut order.

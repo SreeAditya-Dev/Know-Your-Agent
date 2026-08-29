@@ -1,0 +1,155 @@
+# 06 — API Reference
+
+Design reference, frozen Day 0. Endpoint shapes here are the contract the implementation is written against.
+
+## Compatibility stance
+
+KYA speaks **RFC 9421 HTTP Message Signatures** exactly as specified. Agents already implementing Visa TAP or Cloudflare Web Bot Auth work against this gateway **unmodified** — same `Signature`, `Signature-Input` and `Signature-Agent` headers, same Ed25519 verification, same directory resolution.
+
+That is deliberate. A merchant-side control that requires every inbound agent to adopt a bespoke protocol defends nothing, because no agent will adopt it. Compatibility is a feature, not an accident.
+
+The mandate bundle is **AP2-shaped**: Intent Mandate and Cart Mandate as signed JSON, carrying the same semantics as AP2's verifiable credentials. We do not implement the full W3C VC / JSON-LD stack in a seven-day build — see [07](07-limitations.md).
+
+## Request headers
+
+| Header | Source | Required | Purpose |
+|---|---|---|---|
+| `Signature` | RFC 9421 | yes | Ed25519 signature over the signature base |
+| `Signature-Input` | RFC 9421 | yes | Covered components, `keyid`, `created`, `expires`, `nonce`, `tag` |
+| `Signature-Agent` | Web Bot Auth | yes | Domain publishing the agent's JWKS |
+| `Idempotency-Key` | KYA | yes | Client-generated; scopes the cached decision |
+| `KYA-Intent-Mandate` | KYA | yes | Base64url JSON, or in body |
+| `KYA-Cart-Mandate` | KYA | yes | Base64url JSON, or in body |
+
+## Decision envelope
+
+Every guarded endpoint returns this alongside its result. It is the audit trail's user-facing face — reason codes, per-gate trace, and a natural-language explanation **generated from the codes**, never the source of them.
+
+```json
+{
+  "decision_id": "dec_...",
+  "decision": "ALLOW | STEP_UP | QUARANTINE | DENY",
+  "agent_id": "agent_...",
+  "tier": "T0",
+  "reason_codes": ["C002"],
+  "gate_trace": [
+    {"gate": "G0", "verdict": "PASS", "ms": 0.9},
+    {"gate": "G1", "verdict": "PASS", "ms": 1.4, "key_id": "..."},
+    {"gate": "G2", "verdict": "PASS", "ms": 1.1},
+    {"gate": "G3", "verdict": "FAIL", "ms": 2.0,
+     "codes": ["C002"],
+     "drift": {"field": "total", "signed": 549900, "charged": 559900}},
+    {"gate": "G4", "verdict": "SKIPPED", "reason": "short_circuit"}
+  ],
+  "explanation": "Blocked: the cart total presented at charge time was ₹5,599.00, but the mandate the buyer signed committed to ₹5,499.00. The ₹100.00 difference was not authorized.",
+  "obligation_id": null,
+  "idempotent_replay": false,
+  "latency_ms": 5.4
+}
+```
+
+`idempotent_replay: true` marks a cached decision returned for a repeated `Idempotency-Key`. The gates did not re-run.
+
+## Endpoints
+
+### Guarded money actions
+
+```
+POST /v1/agent/orders
+```
+Creates a Razorpay order behind the full gate pipeline. On ALLOW: mints an Obligation Receipt, anchors `self_hash` into `order.notes.kya_obligation`, creates the order, returns `{decision, order, obligation}`.
+
+```
+POST /v1/agent/refunds
+```
+Guarded refund. Subject to G4's refund-rate circuit breaker (`E003`). Refunds against a DISPUTED obligation bypass the breaker — reversal is a system action, not an agent action.
+
+```
+POST /v1/agent/blocks/{block_id}/debit
+```
+**SIMULATED — Reserve Pay / SBMD.** Debit against a reserved block. Enforces the block guard: every debit must map to an open obligation with sufficient `amount_due`, and cumulative debits must not exceed `block.reserved`. Unmatched debits return `E004 block_debit_unbacked`.
+
+> This endpoint models NPCI's Single Block Multi Debit semantics against a local ledger. It is **not** a live Reserve Pay integration, and is labelled `SIMULATED` in code, responses and UI.
+
+### Clearing
+
+```
+POST /v1/evidence
+```
+Submit fulfilment evidence against an obligation. Body carries evidence items, each with a declared class (`SELF`/`SIGN`/`WIT`/`REC`) and provenance chain. Triggers async mesh evaluation.
+
+```
+GET  /v1/obligations/{obligation_id}
+GET  /v1/obligations/{obligation_id}/clearing
+POST /v1/obligations/{obligation_id}/dispute
+```
+Retrieve a receipt, its clearing decision and finality state, or raise a dispute manually.
+
+### Audit
+
+```
+GET /v1/decisions/{decision_id}
+GET /v1/decisions/{decision_id}/replay
+```
+Full decision record; `/replay` re-executes the stored inputs through the current gate configuration and diffs the outcome — the artifact NPCI's stated concern asks for: *"You should be able to review it if something goes wrong."*
+
+```
+GET /v1/ledger/verify
+```
+Walks the hash chain and reports integrity. Also re-verifies anchored hashes against live Razorpay order records.
+
+### Webhooks and dashboard
+
+```
+POST /webhooks/razorpay
+```
+Signature-verified Razorpay events. Feeds the receipt verifier (`REC` class) and the reconciler.
+
+```
+GET /dashboard
+GET /dashboard/decisions/{id}
+GET /dashboard/metrics
+GET /dashboard/quarantine
+```
+Server-rendered. Live decision feed, per-decision gate trace replay, metrics, and the human review queue.
+
+## Reason codes
+
+Frozen in `kya/reasons.py` on Day 0, imported everywhere. Stable identifiers — the vocabulary shared by the audit trail, the dashboard, the explainer and the metrics table.
+
+| Code | Gate | Meaning |
+|---|---|---|
+| `R001` | G0 | `replay_nonce_reused` |
+| `R002` | G0 | `timestamp_skew` |
+| `R003` | G0 | `signature_expired` |
+| `I001` | G1 | `signature_absent` |
+| `I002` | G1 | `signature_invalid` |
+| `I003` | G1 | `unknown_key` |
+| `I004` | G1 | `directory_unreachable_degraded` |
+| `M001` | G2 | `mandate_absent` |
+| `M002` | G2 | `chain_broken` |
+| `M003` | G2 | `mandate_expired` |
+| `M004` | G2 | `principal_mismatch` |
+| `C001` | G3 | `cart_hash_mismatch` |
+| `C002` | G3 | `price_drift` |
+| `C003` | G3 | `sku_substitution` |
+| `C004` | G3 | `constraint_violation` |
+| `E001` | G4 | `velocity_exceeded` |
+| `E002` | G4 | `spend_cap` |
+| `E003` | G4 | `refund_breaker_open` |
+| `E004` | G4 | `block_debit_unbacked` |
+| `E005` | G4 | `tier_ceiling` |
+| `T001` | G5 | `injection_marker` |
+| `T002` | G5 | `callback_domain_unregistered` |
+
+## Configuration
+
+`policies/merchant_policy.yaml` — spend and velocity ceilings, refund-breaker thresholds, admissibility floors per category, appeal window, registered callback domains.
+
+`policies/tiers.yaml` — the T0–T3 ladder and promotion/demotion rules.
+
+Policy is data, not code. A merchant changes limits by editing YAML, and every decision records which policy version produced it.
+
+---
+
+Previous: [05 — Evaluation](05-evaluation.md) · Next: [07 — Limitations](07-limitations.md)
