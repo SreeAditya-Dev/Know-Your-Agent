@@ -28,7 +28,9 @@ import json
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import wraps
 from pathlib import Path
+from threading import RLock
 from typing import Callable
 
 from kya.canonical import now_utc
@@ -45,6 +47,15 @@ GENESIS_HASH = "0" * 64
 
 class LedgerError(RuntimeError):
     """An append that would corrupt the chain was refused."""
+
+
+def _synchronized(method):
+    """Serialize access to one SQLite connection across FastAPI workers."""
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return wrapped
 
 
 @dataclass(slots=True)
@@ -124,13 +135,19 @@ class ObligationLedger:
     ) -> None:
         self.merchant = merchant
         self._clock = clock
-        self._conn = sqlite3.connect(str(path))
+        # A FastAPI sync route runs in a worker thread. The ledger is shared by
+        # those routes, so SQLite's default same-thread restriction would turn
+        # a valid API read into a 500. The RLock below serializes all access to
+        # this one connection, including nested calls such as amend -> append.
+        self._lock = RLock()
+        self._conn = sqlite3.connect(str(path), check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
 
     # --- writing -------------------------------------------------------------
 
+    @_synchronized
     def append(self, receipt: ObligationReceipt) -> ObligationReceipt:
         """Chain, seal and store a receipt. Returns the sealed copy.
 
@@ -177,6 +194,7 @@ class ObligationLedger:
         self._conn.commit()
         return sealed
 
+    @_synchronized
     def amend(
         self,
         obligation_id: str,
@@ -213,6 +231,7 @@ class ObligationLedger:
         amended.merchant_signature = ""
         return self.append(amended)
 
+    @_synchronized
     def bind_rail(
         self, obligation_id: str, rail_id: str, now: datetime | None = None
     ) -> None:
@@ -231,17 +250,20 @@ class ObligationLedger:
 
     # --- reading -------------------------------------------------------------
 
+    @_synchronized
     def tip_hash(self) -> str:
         row = self._conn.execute(
             "SELECT self_hash FROM obligations ORDER BY seq DESC LIMIT 1"
         ).fetchone()
         return row["self_hash"] if row else GENESIS_HASH
 
+    @_synchronized
     def __len__(self) -> int:
         return int(
             self._conn.execute("SELECT COUNT(*) AS n FROM obligations").fetchone()["n"]
         )
 
+    @_synchronized
     def current(self, obligation_id: str) -> ObligationReceipt | None:
         """Latest version — where the obligation stands now."""
         row = self._conn.execute(
@@ -253,6 +275,7 @@ class ObligationLedger:
         ).fetchone()
         return _load(row)
 
+    @_synchronized
     def original(self, obligation_id: str) -> ObligationReceipt | None:
         """Version 1 — what was promised, and the version the anchor pins.
 
@@ -267,6 +290,7 @@ class ObligationLedger:
         ).fetchone()
         return _load(row)
 
+    @_synchronized
     def history(self, obligation_id: str) -> list[ObligationReceipt]:
         rows = self._conn.execute(
             "SELECT payload FROM obligations WHERE obligation_id = ? ORDER BY version",
@@ -274,6 +298,7 @@ class ObligationLedger:
         ).fetchall()
         return [_load(r) for r in rows]  # type: ignore[misc]
 
+    @_synchronized
     def entries(self) -> list[ObligationReceipt]:
         """The whole chain in append order."""
         rows = self._conn.execute(
@@ -281,6 +306,7 @@ class ObligationLedger:
         ).fetchall()
         return [_load(r) for r in rows]  # type: ignore[misc]
 
+    @_synchronized
     def by_rail_ref(
         self, rail_type: RailType, rail_ref: str
     ) -> ObligationReceipt | None:
@@ -293,6 +319,7 @@ class ObligationLedger:
         ).fetchone()
         return self.current(row["obligation_id"]) if row else None
 
+    @_synchronized
     def by_rail_id(self, rail_id: str) -> ObligationReceipt | None:
         """Resolve by the identifier the rail assigned — the webhook path."""
         row = self._conn.execute(
@@ -300,6 +327,7 @@ class ObligationLedger:
         ).fetchone()
         return self.current(row["obligation_id"]) if row else None
 
+    @_synchronized
     def rail_id_for(self, obligation_id: str) -> str | None:
         row = self._conn.execute(
             "SELECT rail_id FROM rail_bindings WHERE obligation_id = ?",
@@ -307,6 +335,7 @@ class ObligationLedger:
         ).fetchone()
         return row["rail_id"] if row else None
 
+    @_synchronized
     def open_for_mandate_chain(self, mandate_chain_hash: str) -> ObligationReceipt | None:
         """An open obligation already covering this exact signed cart.
 
@@ -328,6 +357,7 @@ class ObligationLedger:
                 return receipt
         return None
 
+    @_synchronized
     def open_for_block(self, block_ref: str) -> list[ObligationReceipt]:
         """``ObligationSource`` conformance — what G4's block guard reads."""
         rows = self._conn.execute(
@@ -345,6 +375,7 @@ class ObligationLedger:
                 open_receipts.append(receipt)
         return open_receipts
 
+    @_synchronized
     def open_obligations(self) -> list[ObligationReceipt]:
         rows = self._conn.execute(
             "SELECT DISTINCT obligation_id FROM obligations ORDER BY seq"
@@ -354,6 +385,7 @@ class ObligationLedger:
 
     # --- integrity -----------------------------------------------------------
 
+    @_synchronized
     def verify(self) -> ChainVerification:
         """Walk the chain and report every break found.
 
@@ -441,6 +473,7 @@ class ObligationLedger:
             ok=not failures, entries=len(rows), tip_hash=tip, failures=failures
         )
 
+    @_synchronized
     def close(self) -> None:
         self._conn.close()
 

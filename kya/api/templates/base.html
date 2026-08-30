@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}KYA Control{% endblock %}</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/dashboard">KYA <span>Control</span></a>
+    <nav aria-label="Primary navigation">
+      <a href="/dashboard">Overview</a>
+      <a href="/dashboard/quarantine">Review queue</a>
+      <a href="/dashboard/metrics">Benchmark</a>
+      <a href="/docs" target="_blank" rel="noreferrer">API docs</a>
+    </nav>
+    <div class="environment">Sandbox</div>
+  </header>
+  <main class="shell">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

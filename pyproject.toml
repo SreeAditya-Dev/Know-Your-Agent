@@ -23,6 +23,9 @@ llm = ["anthropic>=0.40"]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
+[tool.fastapi]
+entrypoint = "kya.api.app:app"
+
 [tool.setuptools.packages.find]
 include = ["kya*", "redteam*"]
 

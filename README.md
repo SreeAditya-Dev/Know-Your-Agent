@@ -127,7 +127,7 @@ See [`redteam/REPORT.md`](redteam/REPORT.md) for the generated report and [docs/
 
 ## Status
 
-**Day 5 complete — the gateway, the clearing layer and the measured red-team evaluation are all live.**
+**Day 6 complete — the gateway, clearing layer, measured red-team evaluation, FastAPI surface and operations dashboard are live.**
 
 | Component | State |
 |---|---|
@@ -148,6 +148,7 @@ See [`redteam/REPORT.md`](redteam/REPORT.md) for the generated report and [docs/
 | Clearing mesh, finality, reversal | ✅ implemented, driven end-to-end by the harness |
 | G5 content threat | ✅ deterministic marker and callback-host checks |
 | Red-team corpus + baselines B0–B3 + metrics | ✅ 530-session frozen corpus, `python -m redteam.run --all` |
+| FastAPI gateway, audit routes and server-rendered dashboard | ✅ sandbox runtime, signed order route, evidence, webhooks and review queue |
 
 **270 offline tests passing**, with four additional live test-mode Razorpay tests that require network access and credentials. Attack classes A1–A10 are covered by the inline gateway; obligation--fulfilment mismatch (A11) is handled by the clearing layer. The red-team harness (`redteam/`) runs the identical corpus through four defence postures and reports the comparison, precision/recall, decomposed false-positive cost, latency percentiles and an honest exception list; the corpus is frozen to a committed SHA-256 before any tuning, and the run refuses to report numbers against a corpus that does not match it.
 
@@ -162,6 +163,8 @@ Day 3 adds the artifact that makes "was the obligation satisfied?" answerable. A
 Day 4 completes the deterministic G5 boundary: instruction-shaped free text is quarantined without retaining the hostile content in the decision trace, and callback URLs must match the agent's configured exact-host allowlist. The same pass also adds the clearing mesh, finality, settlement and reversal implementation; no model or network call can influence the inline money decision.
 
 The AgentPay Autopilot extension translates reconciler outcomes into a bounded recovery plan. A verified capture is bound to the existing obligation and completed without a retry; an existing but unpaid order is observed again; lookup uncertainty and rail outages are retried only as read-only checks; and an old missing order goes to human review rather than being recreated blindly. See `kya/autopilot.py`.
+
+Day 6 adds `kya/api/`: a sandbox-safe FastAPI surface and server-rendered control dashboard at `/dashboard`. It records inspected decisions, exposes the signed order, evidence, ledger and webhook paths, renders the frozen B0–B3 benchmark, and provides a human review queue for quarantined calls. The API stores exact signed inputs and gate traces for audit; it does not re-execute historical requests because that would mutate replay and rate-limit state.
 
 Measured data-plane latency over 2,000 requests through G0–G4, at a sustained 450 req/hr so every request is a real ALLOW rather than an early denial, LLM path absent by construction:
 
@@ -178,6 +181,7 @@ Reserve Pay / SBMD is a **labelled local simulation**; NPCI's Unified Agent Prot
 ```bash
 pip install -e ".[dev]"
 pytest tests/ -q
+uvicorn kya.api.app:app --reload
 ```
 
 No network or Razorpay credentials are needed. The agent directory, principals

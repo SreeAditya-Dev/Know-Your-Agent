@@ -44,7 +44,7 @@ Strictly defensive. Every attack in the red-team suite runs against our own sand
 
 ## Status
 
-**Day 4 implementation complete.** The verification core (G0–G3, adjudication, idempotent decision cache), bounded action envelope (G4, Clearing Passport, SIMULATED Reserve Pay block guard), obligation layer (signed receipts, append-only hash-chained ledger, Razorpay anchoring, webhook intake, reconciler), deterministic G5 content-threat gate, clearing layer, and AgentPay recovery planner are built. The offline suite has 257 passing tests; measured data-plane p99 is 4.0 ms against a 50 ms budget.
+**Day 6 implementation complete.** The verification core (G0–G3, adjudication, idempotent decision cache), bounded action envelope (G4, Clearing Passport, SIMULATED Reserve Pay block guard), obligation layer (signed receipts, append-only hash-chained ledger, Razorpay anchoring, webhook intake, reconciler), deterministic G5 content-threat gate, clearing layer, AgentPay recovery planner, red-team harness, FastAPI API, and server-rendered dashboard are built. The offline suite has 270 passing tests; measured data-plane p99 is 7.88 ms against a 50 ms budget.
 
 Design commitment 1 is enforced structurally rather than by convention: the evidence lattice in `kya/evidence.py` is a genuine partial order, and `test_evidence_lattice.py` asserts that a SELF/SIGN-class verdict — which is all a model can declare — cannot satisfy a REC-class floor at any confidence.
 
@@ -52,4 +52,4 @@ Design commitment 2 — that the ladder is *observable*, not merely recorded —
 
 Graceful failure #1 is demonstrated end to end rather than described. The reconciler's defining property is negative — it never writes to the rail — and the tests assert it by inspecting which rail calls were made, not by reading the code. Recovery is possible at all because the obligation is minted and stored *before* the rail is called, committing to an order reference we chose ourselves; after a lost response that reference is the only handle on an order whose id we never learned.
 
-Still to come: the red-team corpus, baselines, metrics, and the dashboard/API work. See [`../PLAN.md`](../PLAN.md) for the day-by-day plan and cut order.
+Still to come: the MCP wrapper and final presentation assets. See [`../PLAN.md`](../PLAN.md) for the day-by-day plan and cut order.

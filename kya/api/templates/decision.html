@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Decision {{ summary.decision_id }}{% endblock %}
+{% block content %}
+<section class="page-head compact">
+  <div>
+    <p class="eyebrow">Decision record</p>
+    <h1>{{ summary.decision_id }}</h1>
+  </div>
+  <span class="badge {{ summary.decision|lower }}">{{ summary.decision }}</span>
+</section>
+<section class="detail-grid">
+  <div class="panel">
+    <div class="panel-head"><h2>Decision basis</h2></div>
+    <dl class="key-values">
+      <div><dt>Agent</dt><dd>{{ summary.agent_id }}</dd></div>
+      <div><dt>Reason codes</dt><dd>{{ summary.reason_codes|join(", ") or "Verified" }}</dd></div>
+      <div><dt>Obligation</dt><dd>{{ summary.obligation_id or "Not minted" }}</dd></div>
+      <div><dt>Latency</dt><dd>{{ "%.2f"|format(summary.latency_ms) }} ms</dd></div>
+    </dl>
+    <p class="explanation">{{ summary.explanation }}</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2>Gate trace</h2></div>
+    <ol class="trace">
+      {% for gate in item.envelope.gate_trace %}
+        <li><span>{{ gate.gate.value }}</span><strong class="{{ gate.verdict.value|lower }}">{{ gate.verdict.value }}</strong><em>{{ "%.2f"|format(gate.elapsed_ms) }} ms</em></li>
+      {% endfor %}
+    </ol>
+  </div>
+</section>
+{% endblock %}

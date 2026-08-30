@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}KYA Control{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <p class="eyebrow">Merchant control plane</p>
+    <h1>Agent transaction oversight</h1>
+  </div>
+  <div class="integrity {% if metrics.operations.ledger_ok %}good{% else %}bad{% endif %}">
+    Ledger {% if metrics.operations.ledger_ok %}intact{% else %}needs review{% endif %}
+  </div>
+</section>
+
+<section class="stat-grid" aria-label="Operational summary">
+  <div class="stat"><span>Recorded decisions</span><strong>{{ metrics.operations.decisions }}</strong></div>
+  <div class="stat warn"><span>Review queue</span><strong>{{ metrics.operations.quarantined }}</strong></div>
+  <div class="stat"><span>Open obligations</span><strong>{{ metrics.operations.obligations }}</strong></div>
+  <div class="stat"><span>Benchmark recall</span><strong>{{ "%.0f"|format(metrics.benchmark.recall * 100) }}%</strong></div>
+</section>
+
+<section class="split-grid">
+  <div class="panel">
+    <div class="panel-head"><h2>Decision log</h2><span>{{ decisions|length }} records</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Decision</th><th>Agent</th><th>Reason</th><th>Latency</th><th></th></tr></thead>
+        <tbody>
+        {% for item in decisions %}
+          <tr>
+            <td><span class="badge {{ item.decision|lower }}">{{ item.decision }}</span></td>
+            <td>{{ item.agent_id }}</td>
+            <td>{{ item.reason_codes|join(", ") or "Verified" }}</td>
+            <td>{{ "%.2f"|format(item.latency_ms) }} ms</td>
+            <td><a class="detail-link" href="/dashboard/decisions/{{ item.decision_id }}">Inspect</a></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="empty">No decisions recorded.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <aside class="panel posture">
+    <div class="panel-head"><h2>Measured posture</h2><a href="/dashboard/metrics">Details</a></div>
+    <dl>
+      <div><dt>Evaluation corpus</dt><dd>{{ metrics.benchmark.sessions }} sessions</dd></div>
+      <div><dt>Attack classes</dt><dd>{{ metrics.benchmark.attacks }} attempts</dd></div>
+      <div><dt>Precision</dt><dd>{{ "%.0f"|format(metrics.benchmark.precision * 100) }}%</dd></div>
+      <div><dt>Inline p99</dt><dd>{{ "%.2f"|format(metrics.benchmark.p99) }} ms</dd></div>
+      <div><dt>Chain entries</dt><dd>{{ metrics.operations.ledger_entries }}</dd></div>
+    </dl>
+  </aside>
+</section>
+{% endblock %}

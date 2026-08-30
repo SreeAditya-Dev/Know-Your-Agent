@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}KYA Benchmark{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div><p class="eyebrow">Frozen red-team corpus</p><h1>Benchmark evidence</h1></div>
+  <div class="integrity good">{{ benchmark.n_sessions }} verified sessions</div>
+</section>
+<section class="stat-grid">
+  <div class="stat"><span>B3 recall</span><strong>{{ "%.0f"|format(b3.recall * 100) }}%</strong></div>
+  <div class="stat"><span>B3 precision</span><strong>{{ "%.0f"|format(b3.precision * 100) }}%</strong></div>
+  <div class="stat"><span>False-positive rate</span><strong>{{ "%.1f"|format(b3.fpr * 100) }}%</strong></div>
+  <div class="stat"><span>Inline p99</span><strong>{{ "%.2f"|format(b3.latency_p99) }} ms</strong></div>
+</section>
+<section class="panel">
+  <div class="panel-head"><h2>Defence posture comparison</h2><span>Frozen corpus hash {{ benchmark.corpus_hash[:12] }}</span></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Posture</th><th>Attacks stopped</th><th>Recall</th><th>Precision</th><th>FPR</th></tr></thead>
+    <tbody>{% for key, item in benchmark.baselines.items() %}
+      <tr><td>{{ key }}</td><td>{{ item.tp }}/{{ item.tp + item.fn }}</td><td>{{ "%.0f"|format(item.recall * 100) }}%</td><td>{{ "%.0f"|format(item.precision * 100) }}%</td><td>{{ "%.1f"|format(item.fpr * 100) }}%</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+</section>
+{% endblock %}

@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "project": {
+    "name": "know-your-agent",
+    "productType": "operational security dashboard",
+    "stack": ["FastAPI", "Jinja2", "server-rendered CSS"]
+  },
+  "sources": {
+    "tokens": [],
+    "components": [],
+    "assets": [],
+    "instructions": []
+  },
+  "design": {
+    "colorMode": "light",
+    "colors": {"canvas": "#f4f6f8", "ink": "#172033", "success": "#075b3e", "review": "#835600", "deny": "#a43525"},
+    "typography": {"family": "system sans", "style": "compact operational"},
+    "spacing": {"page": "28px", "panel": "18px", "grid": "12px"},
+    "radius": {"panel": "6px", "badge": "4px"},
+    "shadows": {},
+    "motion": {},
+    "density": "compact"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [],
+    "patterns": []
+  },
+  "constraints": {
+    "must": ["show real benchmark and audit data", "retain readable table layout on narrow screens"],
+    "avoid": ["marketing hero layout", "gradients", "decorative cards"]
+  },
+  "decisions": ["Use a dense, light operational dashboard with a charcoal top bar and status-specific accents; prioritize decision inspection, review work, and measurable security posture."],
+  "evidence": [],
+  "generatedAt": "2026-08-30T13:16:57.097Z"
+}

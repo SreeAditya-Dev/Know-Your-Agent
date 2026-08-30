@@ -91,7 +91,7 @@ Retrieve a receipt, its clearing decision and finality state, or raise a dispute
 GET /v1/decisions/{decision_id}
 GET /v1/decisions/{decision_id}/replay
 ```
-Full decision record; `/replay` re-executes the stored inputs through the current gate configuration and diffs the outcome — the artifact NPCI's stated concern asks for: *"You should be able to review it if something goes wrong."*
+Full decision record; `/replay` returns the stored signed input and gate trace for audit. Historical re-execution is deliberately disabled because it would mutate nonce and rate-limit state, making the replay itself alter the evidence it is meant to inspect.
 
 ```
 GET /v1/ledger/verify
@@ -111,7 +111,7 @@ GET /dashboard/decisions/{id}
 GET /dashboard/metrics
 GET /dashboard/quarantine
 ```
-Server-rendered. Live decision feed, per-decision gate trace replay, metrics, and the human review queue.
+Server-rendered. Live sandbox decision feed, per-decision gate trace inspection, frozen benchmark metrics, and the human review queue.
 
 ## Reason codes
 
