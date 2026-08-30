@@ -13,24 +13,32 @@
   },
   "design": {
     "colorMode": "light",
-    "colors": {"canvas": "#f4f6f8", "ink": "#172033", "success": "#075b3e", "review": "#835600", "deny": "#a43525"},
-    "typography": {"family": "system sans", "style": "compact operational"},
-    "spacing": {"page": "28px", "panel": "18px", "grid": "12px"},
-    "radius": {"panel": "6px", "badge": "4px"},
+    "colors": {
+      "canvas": "#eceef1", "paper": "#ffffff", "ink": "#14171c", "ink-soft": "#565f6d",
+      "signal": "#4a3aa8", "allow": "#1b6b45", "step-up": "#31478f",
+      "quarantine": "#8a5a0f", "deny": "#9b3226"
+    },
+    "typography": {"family": "IBM Plex Sans + IBM Plex Mono", "style": "institutional ledger — mono for every id, code, hash and stat; sans for prose"},
+    "spacing": {"page": "28-32px", "panel": "18px", "grid": "12px"},
+    "radius": {"panel": "6px", "badge": "3px"},
     "shadows": {},
-    "motion": {},
+    "motion": {"pageEnter": "220ms fade+rise, respects prefers-reduced-motion"},
     "density": "compact"
   },
   "components": {
     "installed": [],
     "preferredPrimitives": [],
-    "patterns": []
+    "patterns": ["trace-strip: the G0-G5 gate pipeline rendered as a literal node sequence with pass/fail dots and a dashed connector where a decision short-circuited"]
   },
   "constraints": {
-    "must": ["show real benchmark and audit data", "retain readable table layout on narrow screens"],
-    "avoid": ["marketing hero layout", "gradients", "decorative cards"]
+    "must": ["show real benchmark and audit data", "retain readable table layout on narrow screens", "reserve the decision-status colors (allow/step-up/quarantine/deny) exclusively for verdicts, never for chrome or links"],
+    "avoid": ["marketing hero layout", "gradients", "decorative cards", "cyan or neon accents of any kind"]
   },
-  "decisions": ["Use a dense, light operational dashboard with a charcoal top bar and status-specific accents; prioritize decision inspection, review work, and measurable security posture."],
+  "decisions": [
+    "Use a dense, light operational dashboard with a charcoal top bar and status-specific accents; prioritize decision inspection, review work, and measurable security posture.",
+    "Institutional ledger identity: IBM Plex Sans/Mono pairing, deepened/desaturated status quartet, single non-cyan indigo-violet interactive accent (--signal) kept strictly apart from all four decision colors.",
+    "Signature element is the gate-trace strip on the decision detail page: the architecture's own G0-G6 pipeline diagram turned into a functional, literal UI component rather than a decorative one."
+  ],
   "evidence": [],
   "generatedAt": "2026-08-30T13:16:57.097Z"
 }

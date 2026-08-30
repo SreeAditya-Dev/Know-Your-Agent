@@ -15,8 +15,9 @@
   <div class="panel-head"><h2>Defence posture comparison</h2><span>Frozen corpus hash {{ benchmark.corpus_hash[:12] }}</span></div>
   <div class="table-wrap"><table>
     <thead><tr><th>Posture</th><th>Attacks stopped</th><th>Recall</th><th>Precision</th><th>FPR</th></tr></thead>
-    <tbody>{% for key, item in benchmark.baselines.items() %}
-      <tr><td>{{ key }}</td><td>{{ item.tp }}/{{ item.tp + item.fn }}</td><td>{{ "%.0f"|format(item.recall * 100) }}%</td><td>{{ "%.0f"|format(item.precision * 100) }}%</td><td>{{ "%.1f"|format(item.fpr * 100) }}%</td></tr>
+    <tbody>{% set labels = {"B0": "no gateway", "B1": "identity-only", "B2": "+ mandate", "B3": "full KYA"} %}
+    {% for key, item in benchmark.baselines.items() %}
+      <tr><td><span class="mono">{{ key }}</span> {{ labels.get(key, "") }}</td><td class="mono">{{ item.tp }}/{{ item.tp + item.fn }}</td><td class="mono">{{ "%.0f"|format(item.recall * 100) }}%</td><td class="mono">{{ "%.0f"|format(item.precision * 100) }}%</td><td class="mono">{{ "%.1f"|format(item.fpr * 100) }}%</td></tr>
     {% endfor %}</tbody>
   </table></div>
 </section>

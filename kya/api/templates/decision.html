@@ -20,10 +20,16 @@
     <p class="explanation">{{ summary.explanation }}</p>
   </div>
   <div class="panel">
-    <div class="panel-head"><h2>Gate trace</h2></div>
-    <ol class="trace">
+    <div class="panel-head"><h2>Gate trace</h2><span>inline pipeline, in evaluation order</span></div>
+    <ol class="trace-strip" aria-label="Inline pipeline trace for this decision">
       {% for gate in item.envelope.gate_trace %}
-        <li><span>{{ gate.gate.value }}</span><strong class="{{ gate.verdict.value|lower }}">{{ gate.verdict.value }}</strong><em>{{ "%.2f"|format(gate.elapsed_ms) }} ms</em></li>
+        <li class="trace-node {{ gate.verdict.value|lower }}">
+          <span class="trace-node__dot" aria-hidden="true"></span>
+          <span class="trace-node__gate">{{ gate.gate.value }}</span>
+          <span class="trace-node__verdict">{{ gate.verdict.value }}</span>
+          {% if gate.codes %}<span class="trace-node__codes">{{ gate.codes|join(", ") }}</span>{% endif %}
+          <span class="trace-node__ms">{{ "%.2f"|format(gate.elapsed_ms) }} ms</span>
+        </li>
       {% endfor %}
     </ol>
   </div>

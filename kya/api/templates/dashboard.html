@@ -28,13 +28,13 @@
         {% for item in decisions %}
           <tr>
             <td><span class="badge {{ item.decision|lower }}">{{ item.decision }}</span></td>
-            <td>{{ item.agent_id }}</td>
-            <td>{{ item.reason_codes|join(", ") or "Verified" }}</td>
-            <td>{{ "%.2f"|format(item.latency_ms) }} ms</td>
+            <td class="mono">{{ item.agent_id }}</td>
+            <td class="mono">{{ item.reason_codes|join(", ") or "Verified" }}</td>
+            <td class="mono">{{ "%.2f"|format(item.latency_ms) }} ms</td>
             <td><a class="detail-link" href="/dashboard/decisions/{{ item.decision_id }}">Inspect</a></td>
           </tr>
         {% else %}
-          <tr><td colspan="5" class="empty">No decisions recorded.</td></tr>
+          <tr><td colspan="5" class="empty">No agent purchases have run through the gateway yet.</td></tr>
         {% endfor %}
         </tbody>
       </table>

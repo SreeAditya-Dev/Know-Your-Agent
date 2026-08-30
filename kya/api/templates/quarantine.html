@@ -8,7 +8,7 @@
 <section class="panel"><div class="table-wrap"><table>
   <thead><tr><th>Decision</th><th>Agent</th><th>Reason codes</th><th>Explanation</th><th></th></tr></thead>
   <tbody>{% for item in decisions %}
-    <tr><td>{{ item.decision_id }}</td><td>{{ item.agent_id }}</td><td>{{ item.reason_codes|join(", ") }}</td><td>{{ item.explanation }}</td><td><a class="detail-link" href="/dashboard/decisions/{{ item.decision_id }}">Inspect</a></td></tr>
+    <tr><td class="mono">{{ item.decision_id }}</td><td class="mono">{{ item.agent_id }}</td><td class="mono">{{ item.reason_codes|join(", ") }}</td><td>{{ item.explanation }}</td><td><a class="detail-link" href="/dashboard/decisions/{{ item.decision_id }}">Inspect</a></td></tr>
   {% else %}<tr><td colspan="5" class="empty">Nothing currently requires review.</td></tr>{% endfor %}</tbody>
 </table></div></section>
 {% endblock %}
