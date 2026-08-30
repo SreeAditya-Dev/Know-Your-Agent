@@ -20,6 +20,7 @@ Razorpay AI Buildathon 2026 · **Track 01 — AI Growth & Agentic Commerce**
 | 05 | [Evaluation](05-evaluation.md) | Corpus design, the anti-rigging protocol, baselines, metrics we report |
 | 06 | [API Reference](06-api.md) | Gateway endpoints, request headers, decision envelope, reason codes |
 | 07 | [Limitations](07-limitations.md) | What KYA does not do, what is simulated, the honest exception list |
+| 08 | [Pitch Script](08-pitch-script.md) | The five-minute demo, beat by beat, tied to what actually runs in this repo |
 
 ---
 
@@ -44,7 +45,7 @@ Strictly defensive. Every attack in the red-team suite runs against our own sand
 
 ## Status
 
-**Day 6 implementation complete.** The verification core (G0–G3, adjudication, idempotent decision cache), bounded action envelope (G4, Clearing Passport, SIMULATED Reserve Pay block guard), obligation layer (signed receipts, append-only hash-chained ledger, Razorpay anchoring, webhook intake, reconciler), deterministic G5 content-threat gate, clearing layer, AgentPay recovery planner, red-team harness, FastAPI API, and server-rendered dashboard are built. The offline suite has 270 passing tests; measured data-plane p99 is 7.88 ms against a 50 ms budget.
+**Days 0–6 implementation complete.** The verification core (G0–G3, adjudication, idempotent decision cache), bounded action envelope (G4, Clearing Passport, SIMULATED Reserve Pay block guard), obligation layer (signed receipts, append-only hash-chained ledger with an optional Postgres/Neon backend, Razorpay anchoring, webhook intake, reconciler), deterministic G5 content-threat gate, clearing layer, AgentPay recovery planner, red-team harness, FastAPI API, server-rendered dashboard, and an MCP tool surface (`kya/rails/mcp_adapter.py`) are all built. The offline suite has 285 passing tests; measured data-plane p99 is 7.88 ms against a 50 ms budget.
 
 Design commitment 1 is enforced structurally rather than by convention: the evidence lattice in `kya/evidence.py` is a genuine partial order, and `test_evidence_lattice.py` asserts that a SELF/SIGN-class verdict — which is all a model can declare — cannot satisfy a REC-class floor at any confidence.
 
@@ -52,4 +53,4 @@ Design commitment 2 — that the ladder is *observable*, not merely recorded —
 
 Graceful failure #1 is demonstrated end to end rather than described. The reconciler's defining property is negative — it never writes to the rail — and the tests assert it by inspecting which rail calls were made, not by reading the code. Recovery is possible at all because the obligation is minted and stored *before* the rail is called, committing to an order reference we chose ourselves; after a lost response that reference is the only handle on an order whose id we never learned.
 
-Still to come: the MCP wrapper and final presentation assets. See [`../PLAN.md`](../PLAN.md) for the day-by-day plan and cut order.
+Nothing on the plan's cut order was actually cut. What remains is Day 7: recording the pitch video against [08](08-pitch-script.md), a final read-through of every doc, and submission. See [`../PLAN.md`](../PLAN.md) for the day-by-day plan and cut order.
