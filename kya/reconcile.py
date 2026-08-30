@@ -38,8 +38,22 @@ ALREADY_BOUND = "already_bound"
 ORDER_RECOVERED = "order_recovered_no_payment"
 NO_PAYMENT_YET = "no_payment_yet"
 ORDER_MISSING = "order_never_created"
+LOOKUP_TOO_SOON = "lookup_too_soon"
 RAIL_UNREACHABLE = "rail_unreachable"
 NOT_APPLICABLE = "not_applicable"
+
+#: How long after minting a lookup miss is uninformative.
+#:
+#: Razorpay's order *list* endpoint is eventually consistent: measured against
+#: live test mode, a new order takes roughly 10-20 seconds to become findable
+#: by ``receipt``, though fetching it by id works at once. Inside that window a
+#: miss says nothing, and reporting ``order_never_created`` would be a lie told
+#: at the exact moment it is most dangerous — a lost response, where anyone
+#: acting on "never created" re-places an order that already exists.
+#:
+#: 60 seconds is three times the observed worst case. The cost of waiting is a
+#: later reconciliation; the cost of concluding early is a double charge.
+PROPAGATION_GRACE_SECONDS = 60
 
 
 @dataclass(slots=True)
@@ -122,9 +136,21 @@ class Reconciler:
             return ReconcileOutcome(obligation_id, RAIL_UNREACHABLE, detail=str(exc))
 
         if order is None:
-            # The rail never got the request. Nothing was charged, so there is
-            # nothing to reconcile — and creating the order now is the agent's
-            # call to make, not ours.
+            # A miss inside the propagation window is not evidence of absence.
+            age = (self._clock() - receipt.created_at).total_seconds()
+            if age < PROPAGATION_GRACE_SECONDS:
+                return ReconcileOutcome(
+                    obligation_id,
+                    LOOKUP_TOO_SOON,
+                    detail=(
+                        f"minted {age:.0f}s ago; the order list endpoint has not "
+                        f"caught up. Retry after {PROPAGATION_GRACE_SECONDS}s."
+                    ),
+                )
+
+            # Old enough that the rail genuinely never got the request. Nothing
+            # was charged, so there is nothing to reconcile — and placing the
+            # order now is the agent's call to make, not ours.
             return ReconcileOutcome(
                 obligation_id,
                 ORDER_MISSING,

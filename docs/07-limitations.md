@@ -12,6 +12,16 @@ What this does and does not prove: the **block guard logic** is real and tested 
 
 **Razorpay Orders, Payments, Refunds and Webhooks are real**, against `rzp_test_` keys. The anchoring in `order.notes` is real and independently verifiable in the Razorpay dashboard.
 
+## Measured constraints in the live integration
+
+**Razorpay's order *list* endpoint is eventually consistent.** Measured against live test mode on 30 Aug 2026: a newly created order is not findable by `receipt` for roughly 10-20 seconds, while `fetch_order` by id returns it immediately.
+
+This matters more than it sounds, because the reconciler's recovery path is a lookup by our own reference — precisely the call that lags. Treating an early miss as "this order was never created" would produce that conclusion at the exact moment it is most dangerous: a lost response, where anyone acting on it re-places an order that already exists.
+
+So the reconciler will not conclude absence inside a 60-second grace window (`PROPAGATION_GRACE_SECONDS`); it reports `lookup_too_soon` and defers. The cost of waiting is a later reconciliation. The cost of concluding early is a double charge.
+
+Worth stating plainly because it is the kind of thing no amount of testing against a fake would ever have surfaced — the fake answered lookups instantly and agreed with our assumptions.
+
 ## What we do not implement
 
 - **Full W3C Verifiable Credentials / JSON-LD.** Mandates are AP2-*shaped* — same fields, same signing semantics, same chain integrity — but serialized as plain signed JSON rather than JSON-LD with a full VC proof suite. The verification logic is equivalent; the wire format is simplified. A production version would use the real VC stack.

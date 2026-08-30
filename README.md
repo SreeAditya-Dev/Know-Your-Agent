@@ -123,20 +123,20 @@ A correctly identified, correctly authorized agent can still substitute a cart, 
 | G6 adjudication + explainer | ✅ |
 | Idempotent decision cache | ✅ |
 | Obligation receipts + hash-chained ledger | ✅ append-only, tamper-evident |
-| Razorpay anchoring (`order.notes.kya_obligation`) | ✅ verified both ways |
+| Razorpay anchoring (`order.notes.kya_obligation`) | ✅ verified against live `rzp_test_` |
 | Webhook intake (signature-verified, deduplicated) | ✅ |
 | Reconciler — graceful failure #1 | ✅ zero duplicate charges |
 | Clearing mesh, finality, reversal | Day 4 |
 | G5 content threat | Day 4–5 |
 | Red-team corpus + baselines | Day 5 |
 
-**246 tests passing** (2 skipped without live Razorpay credentials). Attack classes A1–A7 and A10 blocked end to end; A8, A9 and A11 arrive with G5 and the clearing layer.
+**249 tests passing**, four of them against live test-mode Razorpay (they skip cleanly without credentials). Attack classes A1–A7 and A10 blocked end to end; A8, A9 and A11 arrive with G5 and the clearing layer.
 
 Day 2 added the first gate that looks at an agent *across* requests — the only place the flood shapes are visible at all. Every request in that attack suite passes G0–G3 cleanly, so nothing is wrong with any single request, only with the sequence, which is precisely what identity-only defence cannot see.
 
 Day 3 adds the artifact that makes "was the obligation satisfied?" answerable. An allowed purchase mints a signed Obligation Receipt recording what was promised — SKU, price, delivery window, return terms, plus the predicates that would satisfy it and the evidence class each one requires — *before* the rail is touched, and writes its hash into the Razorpay order's `notes`. Three properties follow:
 
-- **The audit trail is verifiable by someone who does not trust us.** A reviewer with Razorpay dashboard access reads `notes.kya_obligation`, recomputes the hash from the receipt, and matches the two. The order's own timestamp proves the receipt predates capture.
+- **The audit trail is verifiable by someone who does not trust us.** A reviewer with Razorpay dashboard access reads `notes.kya_obligation`, recomputes the hash from the receipt, and matches the two. The order's own timestamp proves the receipt predates capture. This is checked against a real test-mode order, re-fetched from Razorpay rather than read back from the create response.
 - **The ledger is append-only.** State changes append a new version, so what version 1 promised is never rewritten — which is why the anchor still verifies after an obligation has been paid, partially refunded and reversed.
 - **Payment does not satisfy an obligation.** A capture sets `amount_due` to zero and leaves the obligation OPEN. Collapsing the two would erase the distinction the project exists to make.
 
@@ -145,6 +145,8 @@ Measured data-plane latency over 2,000 requests through G0–G4, at a sustained 
 | p50 | p95 | p99 | budget |
 |---|---|---|---|
 | 1.4 ms | 3.1 ms | **4.0 ms** | 50 ms |
+
+One thing only the live run could tell us: Razorpay's order *list* endpoint is eventually consistent, lagging 10-20 seconds behind order creation, while fetch-by-id is immediate. Since the reconciler recovers by looking an order up by our own reference, an early miss must not be read as "never created" — that conclusion, reached during a lost-response recovery, is what causes the double charge it exists to prevent. It now defers inside a 60-second grace window instead. See [docs/07](docs/07-limitations.md).
 
 Reserve Pay / SBMD is a **labelled local simulation**; NPCI's Unified Agent Protocol has not launched and requires RBI approval. Razorpay Orders, Payments, Refunds and Webhooks are real, against `rzp_test_` keys. See [docs/07](docs/07-limitations.md) for the full honest scoping.
 

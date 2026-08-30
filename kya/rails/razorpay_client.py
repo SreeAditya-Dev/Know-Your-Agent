@@ -58,6 +58,13 @@ class RazorpayRail(Protocol):
         The reconciler's entry point. After a lost response the rail's order id
         is precisely the thing we never learned, so recovery has to start from
         an identifier we chose ourselves.
+
+        **Eventually consistent.** Measured against live test-mode Razorpay, a
+        newly created order does not appear in the list endpoint for roughly
+        10-20 seconds, while ``fetch_order`` by id returns it immediately. A
+        ``None`` here therefore does not mean the order was never created — see
+        ``PROPAGATION_GRACE_SECONDS`` in ``kya/reconcile.py``, which is the only
+        reason that constant exists.
         """
         ...
 

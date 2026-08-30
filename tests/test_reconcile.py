@@ -14,15 +14,19 @@ made, because a property this important should not rest on reading the code.
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 
 from kya.enums import Decision, ObligationState
 from kya.reconcile import (
     ALREADY_BOUND,
     BOUND_EXISTING_CAPTURE,
+    LOOKUP_TOO_SOON,
     NO_PAYMENT_YET,
     ORDER_MISSING,
     ORDER_RECOVERED,
+    PROPAGATION_GRACE_SECONDS,
     RAIL_UNREACHABLE,
     Reconciler,
 )
@@ -128,16 +132,33 @@ class TestTheLostResponse:
 
 
 class TestOtherOutcomes:
-    def test_an_order_that_was_never_created_is_reported_not_recreated(
-        self, gateway, rail, reconciler, agent, principal
+    def test_a_fresh_lookup_miss_is_not_called_a_missing_order(
+        self, sandbox, gateway, rail, reconciler, agent, principal
     ):
-        """The rail never received the request, so nothing was charged. Placing
-        the order now would be deciding on the buyer's behalf — the reconciler
-        reports and stops."""
+        """Razorpay's order *list* endpoint is eventually consistent — measured
+        at roughly 10-20 seconds against live test mode. Inside that window a
+        miss says nothing, and "never created" is the one conclusion nobody
+        should reach during a lost-response recovery."""
         rail.unreachable = True
         result = place_order(gateway, agent, principal)
         rail.unreachable = False
 
+        outcome = reconciler.reconcile(result.obligation.obligation_id)
+
+        assert outcome.action == LOOKUP_TOO_SOON
+        assert "Retry after" in outcome.detail
+
+    def test_an_order_that_was_never_created_is_reported_not_recreated(
+        self, sandbox, gateway, rail, reconciler, agent, principal
+    ):
+        """Past the propagation window the miss is real. The rail never got the
+        request, so nothing was charged — and placing the order now would be
+        deciding on the buyer's behalf. The reconciler reports and stops."""
+        rail.unreachable = True
+        result = place_order(gateway, agent, principal)
+        rail.unreachable = False
+
+        sandbox.advance(timedelta(seconds=PROPAGATION_GRACE_SECONDS + 5))
         rail.calls.clear()
         outcome = reconciler.reconcile(result.obligation.obligation_id)
 
