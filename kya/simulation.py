@@ -123,6 +123,9 @@ class Sandbox:
     #: through the ``ObligationSource`` protocol, so the wiring the tests
     #: exercise is the wiring the gateway ships with.
     ledger: ObligationLedger | None = None
+    #: Lets a deployment supply the configured merchant signer while the test
+    #: harness retains its deterministic sandbox identity.
+    merchant_identity: MerchantIdentity | None = None
     blocks: BlockLedger | None = None
     passport_store: PassportStore | None = None
     rail: FakeRazorpayClient | None = None
@@ -172,7 +175,7 @@ class Sandbox:
     def merchant(self) -> MerchantIdentity:
         """Deterministic sandbox merchant, so receipt hashes reproduce."""
         if self._merchant is None:
-            self._merchant = MerchantIdentity(
+            self._merchant = self.merchant_identity or MerchantIdentity(
                 merchant_id=self.policy.merchant_id,
                 keypair=keypair_from_seed(
                     f"{self.policy.merchant_id}-obligation-key-1",
@@ -570,9 +573,13 @@ def make_obligation(
     return receipt
 
 
-def standard_sandbox() -> tuple[Sandbox, AgentIdentity, Principal]:
+def standard_sandbox(
+    *,
+    ledger: ObligationLedger | None = None,
+    merchant: MerchantIdentity | None = None,
+) -> tuple[Sandbox, AgentIdentity, Principal]:
     """The common fixture: one registered agent, one registered principal."""
-    sandbox = Sandbox()
+    sandbox = Sandbox(ledger=ledger, merchant_identity=merchant)
     agent = sandbox.register_agent(AgentIdentity.create("agent_shopper"))
     principal = sandbox.register_principal(Principal.create("user_alice"))
     return sandbox, agent, principal

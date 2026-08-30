@@ -29,6 +29,11 @@ Worth stating plainly because it is the kind of thing no amount of testing again
 - **`ATT` and `PROOF` evidence classes.** The lattice supports them; no verifier produces them. TEE attestation and zero-knowledge proofs are out of scope for seven days.
 - **Human verifier.** RAILS lists human review as a verifier class. We model it as the quarantine queue rather than a mesh participant.
 - **Multi-merchant / marketplace topologies.** One merchant, one gateway.
+- **Full durable control plane.** Neon persists the append-only obligation
+  ledger and rail bindings when configured. The dashboard's decision feed,
+  nonce cache, velocity counters and clearing passports remain process-local
+  demo stores; a production deployment needs durable, shared implementations
+  for those components too.
 - **A live bridge to Razorpay's `razorpay-mcp-server`.** `kya/rails/mcp_adapter.py` exposes KYA's own guarded actions over MCP, gated identically to the HTTP API. It does not proxy Razorpay's separate 35+-tool MCP server against the raw Orders/Payments API — bridging two processes and two auth models honestly was out of scope for this window.
 
 ## Structural limits — things this design cannot fix

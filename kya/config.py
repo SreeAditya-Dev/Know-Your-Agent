@@ -17,7 +17,9 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from kya.crypto import KeyPair, keypair_from_seed
@@ -32,7 +34,10 @@ class Settings(BaseSettings):
     """Values read from the environment or a local ``.env``."""
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
     )
 
     razorpay_key_id: str = ""
@@ -46,6 +51,23 @@ class Settings(BaseSettings):
     kya_merchant_key_seed: str = ""
 
     kya_db_path: str = "data/kya.db"
+    #: A standard Postgres URL for deployments that already expose one. Kept
+    #: separate from the SQLite sandbox path so test and evaluation runs stay
+    #: self-contained unless an operator opts into persistent storage.
+    kya_database_url: str = Field(
+        default="", validation_alias=AliasChoices("KYA_DATABASE_URL", "DATABASE_URL")
+    )
+    #: libpq-compatible variables, including the names Neon supplies in its
+    #: connection panel. They deliberately retain the no-underscore spelling
+    #: so an operator can export PGHOST/PGDATABASE/... without translation.
+    pg_host: str = Field(default="", validation_alias="PGHOST")
+    pg_database: str = Field(default="", validation_alias="PGDATABASE")
+    pg_user: str = Field(default="", validation_alias="PGUSER")
+    pg_password: str = Field(default="", validation_alias="PGPASSWORD")
+    pg_sslmode: str = Field(default="require", validation_alias="PGSSLMODE")
+    pg_channel_binding: str = Field(
+        default="require", validation_alias="PGCHANNELBINDING"
+    )
 
     anthropic_api_key: str = ""
     #: Alternative backend for the semantic verifier. Control plane only — the
@@ -96,6 +118,36 @@ class Settings(BaseSettings):
         path = Path(self.kya_db_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         return str(path)
+
+    def postgres_connection_kwargs(self) -> dict[str, str] | None:
+        """Return a psycopg connection configuration, or ``None`` for SQLite.
+
+        The application uses the Neon pooler for request-serving traffic. A
+        URL wins when provided; otherwise this accepts the five libpq variables
+        Neon exposes. Passwords are returned only to the database driver and
+        never logged or included in API responses.
+        """
+        if self.kya_database_url:
+            return {"conninfo": self.kya_database_url}
+
+        values: dict[str, str] = {
+            "host": self.pg_host,
+            "dbname": self.pg_database,
+            "user": self.pg_user,
+            "password": self.pg_password,
+        }
+        configured = [name for name, value in values.items() if value]
+        if not configured:
+            return None
+        missing = [name for name, value in values.items() if not value]
+        if missing:
+            raise ConfigError(
+                "Postgres configuration is incomplete; set "
+                + ", ".join(f"PG{name.upper()}" for name in missing)
+            )
+        values["sslmode"] = self.pg_sslmode
+        values["channel_binding"] = self.pg_channel_binding
+        return values
 
 
 def merchant_keypair(merchant_id: str, seed_source: str) -> KeyPair:

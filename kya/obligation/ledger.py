@@ -31,7 +31,7 @@ from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from threading import RLock
-from typing import Callable
+from typing import Any, Callable, Mapping
 
 from kya.canonical import now_utc
 from kya.crypto import sign_payload, verify_payload
@@ -186,7 +186,10 @@ class ObligationLedger:
                     json.dumps(sealed.model_dump(mode="json")),
                 ),
             )
-        except sqlite3.IntegrityError as exc:
+        except Exception as exc:
+            if not self._is_integrity_error(exc):
+                raise
+            self._conn.rollback()
             raise LedgerError(
                 f"refusing to append {sealed.obligation_id} v{sealed.version}: {exc}"
             ) from exc
@@ -477,8 +480,12 @@ class ObligationLedger:
     def close(self) -> None:
         self._conn.close()
 
+    def _is_integrity_error(self, exc: Exception) -> bool:
+        """Backend hook used by the Postgres implementation."""
+        return isinstance(exc, sqlite3.IntegrityError)
 
-def _load(row: sqlite3.Row | None) -> ObligationReceipt | None:
+
+def _load(row: Mapping[str, Any] | None) -> ObligationReceipt | None:
     if row is None:
         return None
     return ObligationReceipt.model_validate(json.loads(row["payload"]))

@@ -178,6 +178,22 @@ Degradation codes (`R004`, `I004`) propose STEP_UP rather than DENY: they mean a
 
 Policy is data, not code. A merchant changes limits by editing YAML, and every decision records which policy version produced it.
 
+### Neon Postgres persistence
+
+The API defaults to SQLite only when no Postgres settings are present, preserving
+the hermetic sandbox and red-team corpus. To run the application against Neon,
+set `KYA_DATABASE_URL` (or standard `PGHOST`, `PGDATABASE`, `PGUSER`,
+`PGPASSWORD`, `PGSSLMODE`, and `PGCHANNELBINDING`) in the deployment's secret
+environment. The supplied `-pooler` hostname is supported for request-serving
+FastAPI workers; `sslmode=require` and `channel_binding=require` are passed to
+the Postgres driver.
+
+Run `python -m kya.db.check` in that environment to verify connectivity and
+the append-only ledger schema. The check never prints the connection string or
+password. The durable store currently covers obligation receipts and rail
+bindings; the demo decision feed, nonce cache, limits and passports remain
+in-process sandbox state.
+
 ---
 
 Previous: [05 — Evaluation](05-evaluation.md) · Next: [07 — Limitations](07-limitations.md)

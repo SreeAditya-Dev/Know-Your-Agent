@@ -15,7 +15,9 @@ from typing import Any
 
 from kya.canonical import now_utc
 from kya.clearing.service import ClearingResult, ClearingService
+from kya.config import load_settings
 from kya.gateway import Gateway, GatewayResult
+from kya.obligation.postgres import PostgresObligationLedger
 from kya.reconcile import Reconciler, install_webhook_handlers
 from kya.rails.webhooks import WebhookReceiver
 from kya.schemas import AgentRequest, DecisionEnvelope
@@ -77,7 +79,16 @@ class KYAAppState:
 
     @classmethod
     def demo(cls, seed: bool = True) -> KYAAppState:
-        sandbox, agent, principal = standard_sandbox()
+        settings = load_settings()
+        connect_kwargs = settings.postgres_connection_kwargs()
+        ledger = None
+        merchant = None
+        if connect_kwargs is not None:
+            merchant = settings.merchant_identity()
+            ledger = PostgresObligationLedger(
+                merchant, connect_kwargs=connect_kwargs
+            )
+        sandbox, agent, principal = standard_sandbox(ledger=ledger, merchant=merchant)
         state = cls(sandbox=sandbox, agent=agent, principal=principal)
         if seed:
             state.seed_demo()
