@@ -63,6 +63,11 @@ class Policy:
     #: the two limits legible against each other.
     spend_window_seconds: int = 3600
 
+    #: RAILS' ``c_min``. A clearing decision below this confidence cannot reach
+    #: finality however good its evidence class is: admissibility and certainty
+    #: are separate questions, and passing one does not excuse the other.
+    min_confidence: float = 0.70
+
     #: Absolute ceiling regardless of tier.
     hard_max_amount: int = 500_000 * RUPEE
 

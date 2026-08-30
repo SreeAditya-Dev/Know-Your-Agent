@@ -345,6 +345,12 @@ class VerifierOutput(Base):
     #: The class of evidence this verifier actually relied on. The aggregator
     #: trusts this declaration; RAILS calls the alternative LAUNDER-BASIS.
     declared_basis: EvidenceClass
+    #: Ids of the evidence items the verifier actually read. Declaring what you
+    #: relied on is what makes the basis claim *checkable*: the mesh recomputes
+    #: the meet of these items and flags a verifier claiming better evidence
+    #: than it cited. Without it, ``declared_basis`` is an unfalsifiable
+    #: assertion and LAUNDER-BASIS has no detector.
+    cited_items: list[str] = Field(default_factory=list)
     loss_estimate: int = Field(default=0, ge=0, description="paise")
     detail: str = ""
 

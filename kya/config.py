@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     kya_db_path: str = "data/kya.db"
 
     anthropic_api_key: str = ""
+    #: Alternative backend for the semantic verifier. Control plane only — the
+    #: latency test asserts that nothing reachable from a gate can reach a
+    #: network call, so a key here can never end up on the money path.
+    nvidia_api_key: str = ""
     kya_enable_semantic_verifier: bool = False
 
     kya_clock_skew_seconds: int = 300
