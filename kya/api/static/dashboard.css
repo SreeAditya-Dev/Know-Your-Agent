@@ -152,7 +152,7 @@ h2 { margin-bottom: 0; font-size: 14px; font-weight: 600; }
 
 /* ---------- panels & layout ---------- */
 
-.split-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 0.85fr); gap: 20px; }
+.split-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 0.85fr); gap: 20px; margin-bottom: 20px; }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 .panel-head {
@@ -193,10 +193,10 @@ td.mono, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nu
   letter-spacing: 0.03em;
 }
 .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.badge.allow { background: var(--allow-bg); color: var(--allow); }
-.badge.deny { background: var(--deny-bg); color: var(--deny); }
+.badge.allow, .badge.final { background: var(--allow-bg); color: var(--allow); }
+.badge.deny, .badge.disputed { background: var(--deny-bg); color: var(--deny); }
 .badge.quarantine { background: var(--quarantine-bg); color: var(--quarantine); }
-.badge.step_up { background: var(--step-up-bg); color: var(--step-up); }
+.badge.step_up, .badge.provisional { background: var(--step-up-bg); color: var(--step-up); }
 
 /* ---------- key/value + posture lists ---------- */
 

@@ -138,7 +138,8 @@ class KYAAppState:
         velocity, spend, refund ratio — can never leak into another's.
         """
         self._seed_allowed_purchase()
-        self._seed_step_up()
+        self._seed_step_up_threshold()
+        self._seed_tier_ceiling_step_up()
         self._seed_injection_quarantine()
         self._seed_velocity_quarantine()
         self._seed_refund_flood_quarantine()
@@ -169,14 +170,24 @@ class KYAAppState:
         )
         self.create_order(request)
 
-    def _seed_step_up(self) -> None:
-        """E005 — a first-contact agent asking for more than its tier's
-        step-up threshold. Not refused: the trust ladder's cold-start answer
-        is friction, not a lost sale."""
+    def _seed_step_up_threshold(self) -> None:
+        """A002 — a first-contact agent asking for more than its tier's
+        step-up threshold, but still within its spend cap. Not refused: the
+        trust ladder's cold-start answer is friction, not a lost sale."""
         agent = self.sandbox.register_agent(AgentIdentity.create("agent_stepup_demo"))
         self.sandbox.set_tier(agent.agent_id, Tier.T0)
         cart = make_cart(items=[("SKU-SPEAKER", "Bluetooth speaker", 1, 1_499_00)])
         mandates = make_mandates(agent, self.principal, cart, max_amount=3_000_00)
+        self.create_order(build_signed_request(agent, mandates, cart))
+
+    def _seed_tier_ceiling_step_up(self) -> None:
+        """E005 — distinct from A002: a single action larger than the tier's
+        *entire* rolling budget, not merely above the step-up threshold
+        within it. Still bounded to a re-authentication, not a denial."""
+        agent = self.sandbox.register_agent(AgentIdentity.create("agent_ceiling_demo"))
+        self.sandbox.set_tier(agent.agent_id, Tier.T0)
+        cart = make_cart(items=[("SKU-CHAIR", "Office chair", 1, 3_500_00)])
+        mandates = make_mandates(agent, self.principal, cart, max_amount=10_000_00)
         self.create_order(build_signed_request(agent, mandates, cart))
 
     def _seed_injection_quarantine(self) -> None:
@@ -305,8 +316,11 @@ class KYAAppState:
         not the gateway, is what disputes it."""
         agent = self.sandbox.register_agent(AgentIdentity.create("agent_fulfilment_demo"))
         self.sandbox.set_tier(agent.agent_id, Tier.T1)  # REC floor: REC evidence is admissible
-        cart = make_cart(items=[("SKU-PHONE-256", "Phone, 256GB", 1, 42_999_00)])
-        mandates = make_mandates(agent, self.principal, cart, max_amount=80_000_00)
+        # Kept below T1's step-up threshold (₹5,000) so the purchase clears
+        # ALLOW outright and an obligation actually mints — the mismatch only
+        # needs to be visible at fulfilment, not gate friction at purchase.
+        cart = make_cart(items=[("SKU-PHONE-BUDGET", "Budget phone, 64GB", 1, 4_499_00)])
+        mandates = make_mandates(agent, self.principal, cart, max_amount=9_000_00)
         result = self.create_order(build_signed_request(agent, mandates, cart))
         if result.obligation is None:  # pragma: no cover - defensive
             return

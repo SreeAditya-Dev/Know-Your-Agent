@@ -52,6 +52,16 @@ def _decision_summary(item: StoredDecision) -> dict[str, Any]:
     }
 
 
+def _clearing_summary(result: Any) -> dict[str, Any]:
+    return {
+        "obligation_id": result.obligation.obligation_id,
+        "agent_id": result.obligation.agent_id,
+        "finality": result.finality.finality.value,
+        "performance_verdict": result.decision.performance_verdict,
+        "explanation": result.explain(),
+    }
+
+
 def _result_payload(result: Any) -> dict[str, Any]:
     return {
         "decision": _json_model(result.envelope),
@@ -69,6 +79,7 @@ def _dashboard_metrics(state: KYAAppState) -> dict[str, Any]:
     b3 = benchmark["baselines"]["B3"]
     decisions = state.ordered_decisions()
     ledger = state.sandbox.ledger.verify()
+    clearing_results = state.ordered_clearing_results()
     return {
         "benchmark": {
             "sessions": benchmark["n_sessions"],
@@ -85,6 +96,9 @@ def _dashboard_metrics(state: KYAAppState) -> dict[str, Any]:
             "obligations": len(state.sandbox.ledger.open_obligations()),
             "ledger_ok": ledger.ok,
             "ledger_entries": ledger.entries,
+            "clearing_disputed": sum(
+                result.disputed for result in clearing_results
+            ),
         },
     }
 
@@ -224,6 +238,9 @@ def create_app(state: KYAAppState | None = None) -> FastAPI:
             context={
                 "metrics": _dashboard_metrics(state),
                 "decisions": [_decision_summary(item) for item in state.ordered_decisions()],
+                "clearing_results": [
+                    _clearing_summary(result) for result in state.ordered_clearing_results()
+                ],
             },
         )
 

@@ -51,4 +51,29 @@
     </dl>
   </aside>
 </section>
+
+<section class="panel" aria-label="Clearing layer">
+  <div class="panel-head">
+    <h2>Obligation clearing</h2>
+    <span>caught off the money path — {{ metrics.operations.clearing_disputed }} disputed</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Obligation</th><th>Agent</th><th>Performance</th><th>Finality</th><th>Explanation</th></tr></thead>
+      <tbody>
+      {% for item in clearing_results %}
+        <tr>
+          <td class="mono">{{ item.obligation_id }}</td>
+          <td class="mono">{{ item.agent_id }}</td>
+          <td class="mono">{{ item.performance_verdict }}</td>
+          <td><span class="badge {{ item.finality|lower }}">{{ item.finality }}</span></td>
+          <td>{{ item.explanation }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="empty">No obligation has been checked against fulfilment evidence yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}

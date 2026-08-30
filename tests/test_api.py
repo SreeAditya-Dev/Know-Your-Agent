@@ -39,7 +39,11 @@ def test_api_exposes_auditable_decision_and_ledger():
     assert health.status_code == 200
     assert health.json()["mode"] == "sandbox"
     assert decisions.status_code == 200
-    assert len(decisions.json()) == 2
+    # The seeded demo now walks every decision shape, not just two records —
+    # this asserts the variety, not a count that would need bumping every
+    # time a scenario is added.
+    seen = {item["decision"] for item in decisions.json()}
+    assert {"ALLOW", "DENY", "QUARANTINE", "STEP_UP"} <= seen
 
     decision_id = decisions.json()[0]["decision_id"]
     record = client.get(f"/v1/decisions/{decision_id}")
@@ -67,6 +71,49 @@ def test_signed_order_route_records_a_real_gateway_result():
     assert payload["decision"]["decision"] == "ALLOW"
     assert payload["order"]["amount"] == cart.total
     assert payload["obligation"]["self_hash"]
+
+
+def test_seed_demo_covers_every_reason_code_family():
+    """The dashboard is meant to be a scenario catalog, not just a smoke
+    test — one example of every gate's DENY/QUARANTINE/STEP_UP family should
+    be visible on first load, spread across dedicated identities so no two
+    scenarios' counters interfere."""
+    state = KYAAppState.demo()
+    codes = {
+        code
+        for item in state.decisions.values()
+        for code in item.envelope.reason_codes
+    }
+    expected = {
+        "A002", "E005",  # two distinct STEP_UP paths
+        "T001", "E001", "E003",  # three distinct QUARANTINE paths
+        "I001", "I003", "R001", "C002", "C003", "C004", "T002", "E004",  # DENY
+    }
+    assert expected <= codes
+
+    agent_ids = {item.envelope.agent_id for item in state.decisions.values()}
+    assert len(agent_ids) >= 10, "scenarios should mostly use dedicated identities"
+
+
+def test_seed_demo_includes_an_obligation_mismatch_disputed_at_clearing():
+    """A11's shape: legitimate at purchase, disputed only once fulfilment
+    evidence is examined — the one class no inline gate can see."""
+    state = KYAAppState.demo()
+
+    assert state.clearing_results, "expected at least one clearing result"
+    result = next(iter(state.clearing_results.values()))
+    assert result.disputed
+    assert result.decision.performance_verdict == "VIOLATED"
+
+
+def test_dashboard_renders_the_clearing_panel():
+    client = _client()
+
+    response = client.get("/dashboard")
+
+    assert response.status_code == 200
+    assert "Obligation clearing" in response.text
+    assert "DISPUTED" in response.text
 
 
 def test_webhook_route_verifies_and_deduplicates_delivery():
