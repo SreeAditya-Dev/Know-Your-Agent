@@ -70,6 +70,8 @@ INLINE_MODULES = (
     "kya/gates/g1_identity.py",
     "kya/gates/g2_mandate.py",
     "kya/gates/g3_cart.py",
+    "kya/gates/g4_envelope.py",
+    "kya/gates/g5_content.py",
     "kya/gates/g6_adjudicate.py",
     "kya/gates/pipeline.py",
     "kya/gates/base.py",

@@ -76,7 +76,7 @@ An unmatched debit is denied. This is the control SBMD does not have today: it c
 `E001 velocity_exceeded` · `E002 spend_cap` · `E003 refund_breaker_open` · `E004 block_debit_unbacked` · `E005 tier_ceiling`
 
 ### G5 — Content Threat
-Indirect prompt-injection markers in agent-supplied free text (order notes, address lines, coupon codes, customer fields). Callback and webhook URLs must resolve to a domain registered for that agent × merchant pair, defeating counterfeit-merchant callbacks. Inline detection is deterministic only; LLM classification runs asynchronously on quarantined items.
+Indirect prompt-injection markers in agent-supplied free text (order notes, address lines, coupon codes, customer fields). Callback and webhook URLs must resolve to an exact host registered for that agent, defeating counterfeit-merchant callbacks. Inline detection is deterministic only; LLM classification runs asynchronously on quarantined items.
 
 `T001 injection_marker` · `T002 callback_domain_unregistered`
 

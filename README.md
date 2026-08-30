@@ -126,11 +126,11 @@ A correctly identified, correctly authorized agent can still substitute a cart, 
 | Razorpay anchoring (`order.notes.kya_obligation`) | ✅ verified against live `rzp_test_` |
 | Webhook intake (signature-verified, deduplicated) | ✅ |
 | Reconciler — graceful failure #1 | ✅ zero duplicate charges |
-| Clearing mesh, finality, reversal | Day 4 |
-| G5 content threat | Day 4–5 |
+| Clearing mesh, finality, reversal | ✅ implemented |
+| G5 content threat | ✅ deterministic marker and callback-host checks |
 | Red-team corpus + baselines | Day 5 |
 
-**249 tests passing**, four of them against live test-mode Razorpay (they skip cleanly without credentials). Attack classes A1–A7 and A10 blocked end to end; A8, A9 and A11 arrive with G5 and the clearing layer.
+**253 offline tests passing**, with four additional live test-mode Razorpay tests that require network access and credentials. Attack classes A1–A10 are covered by the inline gateway; obligation--fulfilment mismatch (A11) is handled by the clearing layer.
 
 Day 2 added the first gate that looks at an agent *across* requests — the only place the flood shapes are visible at all. Every request in that attack suite passes G0–G3 cleanly, so nothing is wrong with any single request, only with the sequence, which is precisely what identity-only defence cannot see.
 
@@ -139,6 +139,8 @@ Day 3 adds the artifact that makes "was the obligation satisfied?" answerable. A
 - **The audit trail is verifiable by someone who does not trust us.** A reviewer with Razorpay dashboard access reads `notes.kya_obligation`, recomputes the hash from the receipt, and matches the two. The order's own timestamp proves the receipt predates capture. This is checked against a real test-mode order, re-fetched from Razorpay rather than read back from the create response.
 - **The ledger is append-only.** State changes append a new version, so what version 1 promised is never rewritten — which is why the anchor still verifies after an obligation has been paid, partially refunded and reversed.
 - **Payment does not satisfy an obligation.** A capture sets `amount_due` to zero and leaves the obligation OPEN. Collapsing the two would erase the distinction the project exists to make.
+
+Day 4 completes the deterministic G5 boundary: instruction-shaped free text is quarantined without retaining the hostile content in the decision trace, and callback URLs must match the agent's configured exact-host allowlist. The same pass also adds the clearing mesh, finality, settlement and reversal implementation; no model or network call can influence the inline money decision.
 
 Measured data-plane latency over 2,000 requests through G0–G4, at a sustained 450 req/hr so every request is a real ALLOW rather than an early denial, LLM path absent by construction:
 

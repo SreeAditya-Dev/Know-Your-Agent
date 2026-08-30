@@ -30,6 +30,7 @@ from kya.gates.g1_identity import G1Identity
 from kya.gates.g2_mandate import G2Mandate
 from kya.gates.g3_cart import G3Cart
 from kya.gates.g4_envelope import G4Envelope
+from kya.gates.g5_content import G5ContentThreat
 from kya.gates.g6_adjudicate import adjudicate, explain
 from kya.reasons import get as get_reason
 from kya.reserve_pay import BlockLedger
@@ -119,14 +120,14 @@ def default_pipeline(
     limits: LimitStore | None = None,
     blocks: BlockLedger | None = None,
 ) -> Pipeline:
-    """Transport, identity, mandate, cart binding, bounded envelope.
+    """Transport, identity, mandate, cart binding, bounds, content threat.
 
     G4 carries cross-request counters, so its stores are injectable: the eval
     harness and the sandbox need to drive them on a controlled clock, and a
     multi-process deployment needs them shared rather than per-worker.
 
-    G5 (content threat) slots in ahead of adjudication without any change to
-    this runner.
+    G5 is deliberately deterministic and local, so it is safe to run on the
+    inline money path without affecting the model/network boundary.
     """
     return Pipeline(
         [
@@ -135,5 +136,6 @@ def default_pipeline(
             G2Mandate(),
             G3Cart(),
             G4Envelope(limits=limits, blocks=blocks),
+            G5ContentThreat(),
         ]
     )
