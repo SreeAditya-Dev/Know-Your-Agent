@@ -44,8 +44,10 @@ Strictly defensive. Every attack in the red-team suite runs against our own sand
 
 ## Status
 
-**Day 1 complete.** The verification core (G0–G3, adjudication, idempotent decision cache) is built, with 94 tests passing and attack classes A1–A6 blocked end to end. Measured data-plane p99 is 9.8 ms against a 50 ms budget.
+**Day 2 complete.** The verification core (G0–G3, adjudication, idempotent decision cache) and the bounded action envelope (G4, Clearing Passport, SIMULATED Reserve Pay block guard) are built, with 164 tests passing and attack classes A1–A7 and A10 blocked end to end. Measured data-plane p99 is 4.0 ms against a 50 ms budget.
 
 Design commitment 1 is enforced structurally rather than by convention: the evidence lattice in `kya/evidence.py` is a genuine partial order, and `test_evidence_lattice.py` asserts that a SELF/SIGN-class verdict — which is all a model can declare — cannot satisfy a REC-class floor at any confidence.
 
-Still to come: G4 and the Reserve Pay block guard (Day 2), obligation ledger with Razorpay anchoring (Day 3), clearing mesh and reversal (Day 4), red-team corpus and baselines (Day 5). See [`../PLAN.md`](../PLAN.md) for the day-by-day plan and cut order.
+Design commitment 2 — that the ladder is *observable*, not merely recorded — is enforced the same way. A promotion widens the token bucket on the very next request rather than at some later epoch, and `test_attacks_day2.py` asserts that the identical ₹5,000 purchase is stepped up at T0 and allowed at T2.
+
+Still to come: G5 content threat, obligation ledger with Razorpay anchoring (Day 3), clearing mesh and reversal (Day 4), red-team corpus and baselines (Day 5). See [`../PLAN.md`](../PLAN.md) for the day-by-day plan and cut order.

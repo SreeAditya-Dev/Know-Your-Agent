@@ -77,7 +77,7 @@ class TestShortCircuit:
     def test_every_gate_appears_in_the_trace(self, sandbox, good_request):
         """The audit trail must account for all gates, including skipped ones."""
         env = sandbox.evaluate(good_request)
-        assert [g.gate.value for g in env.gate_trace] == ["G0", "G1", "G2", "G3"]
+        assert [g.gate.value for g in env.gate_trace] == ["G0", "G1", "G2", "G3", "G4"]
 
 
 class TestTierModulation:

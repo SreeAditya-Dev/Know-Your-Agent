@@ -132,10 +132,13 @@ kya/
 ├─ schemas.py            pydantic models — frozen first
 ├─ gates/                g0_replay · g1_identity · g2_mandate · g3_cart
 │                        g4_envelope · g5_content · g6_adjudicate
+├─ limits.py             token bucket · sliding window (G4's counters)
+├─ passport.py           Clearing Passport store · tier movement rules
+├─ reserve_pay.py        SIMULATED SBMD block ledger · unbacked-debit guard
+├─ policy.py             tier ladder · breaker thresholds (data, not code)
 ├─ obligation/           receipt · ledger (hash chain) · anchor
 ├─ clearing/             evidence · mesh · verifiers/ · finality · reversal
-├─ passport/             store · tiers
-├─ rails/                razorpay_client · reserve_pay_sim · mcp_adapter
+├─ rails/                razorpay_client · mcp_adapter
 ├─ api/                  gateway routes · webhooks · dashboard
 └─ config.py             policy YAML loader
 ```

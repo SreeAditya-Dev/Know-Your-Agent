@@ -124,7 +124,68 @@ def _detail_for(code: str, results: list[GateResult]) -> str:
         if code == "I003":
             return f"Key {d.get('key_id')} is not published by {d.get('origin')}."
         if code == "E005":
-            return "New agents are bounded rather than blocked while they build a record."
+            return (
+                f"{_rupees(d.get('tier_ceiling', {}).get('amount', 0))} is above the "
+                f"{d.get('tier', '?')} ceiling of "
+                f"{_rupees(d.get('tier_ceiling', {}).get('tier_spend_cap', 0))}."
+            )
+        if code == "E001":
+            if "delegated_transactions" in d:
+                dt = d["delegated_transactions"]
+                return (
+                    f"The buyer authorised {dt['limit']} transaction(s) on this "
+                    f"mandate and {dt['already_used']} have been used."
+                )
+            scopes = d.get("velocity", [])
+            if scopes:
+                first = scopes[0]
+                return (
+                    f"Rate limit for this tier is {first['limit_per_hour']}/hour; "
+                    f"capacity returns in {first['retry_after_seconds']:.0f}s."
+                )
+        if code == "E002":
+            spend = d.get("spend", {})
+            return (
+                f"{_rupees(spend.get('spent_in_window', 0))} already spent in the last "
+                f"hour against a {_rupees(spend.get('tier_spend_cap', 0))} cap; "
+                f"{_rupees(spend.get('requested', 0))} more was requested."
+            )
+        if code == "E003":
+            rb = d.get("refund_breaker", {})
+            if rb.get("rule") == "refunds_exceed_orders":
+                return (
+                    f"{rb.get('refunds_including_this')} refund(s) against "
+                    f"{rb.get('orders')} order(s) in the window. Refunds cannot "
+                    "outnumber orders."
+                )
+            return (
+                f"Refund rate {rb.get('ratio')} is above the permitted "
+                f"{rb.get('threshold')} over {rb.get('orders')} orders."
+            )
+        if code == "E004":
+            guard = d.get("block_guard", {})
+            reasons = {
+                "no_open_obligation": (
+                    "The block was valid and funded, but no open obligation covers "
+                    "this debit — the funds were authorised, nothing was owed."
+                ),
+                "amount_exceeds_due": (
+                    f"The debit of {_rupees(guard.get('amount', 0))} exceeds the "
+                    f"{_rupees(guard.get('max_amount_due', 0))} still owed on the "
+                    "matching obligation."
+                ),
+                "block_revoked": "The buyer has revoked this block.",
+                "block_expired": "The block's authorisation window has closed.",
+                "unknown_block": "No such block exists.",
+            }
+            return reasons.get(str(guard.get("reason")), "")
+        if code == "E006":
+            guard = d.get("block_guard", {})
+            return (
+                f"{_rupees(guard.get('amount', 0))} was requested against "
+                f"{_rupees(guard.get('available', 0))} still available on a "
+                f"{_rupees(guard.get('reserved', 0))} block."
+            )
     return ""
 
 

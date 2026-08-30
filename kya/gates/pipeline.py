@@ -22,14 +22,17 @@ import uuid
 from dataclasses import dataclass, field
 
 from kya.enums import Decision, Gate, GateVerdict
+from kya.limits import LimitStore
 from kya.gates.base import BaseGate
 from kya.gates.context import GateContext
 from kya.gates.g0_replay import G0Replay
 from kya.gates.g1_identity import G1Identity
 from kya.gates.g2_mandate import G2Mandate
 from kya.gates.g3_cart import G3Cart
+from kya.gates.g4_envelope import G4Envelope
 from kya.gates.g6_adjudicate import adjudicate, explain
 from kya.reasons import get as get_reason
+from kya.reserve_pay import BlockLedger
 from kya.schemas import DecisionEnvelope, GateResult
 
 
@@ -92,6 +95,12 @@ class Pipeline:
             decided_at=ctx.now,
         )
 
+        # Book consumed state only once the decision is known. Gates that hold
+        # no cross-request state no-op here.
+        if decision is Decision.ALLOW:
+            for gate in self.gates:
+                gate.commit(ctx, envelope)
+
         self._decisions[key] = _CachedDecision(envelope=envelope)
         return envelope
 
@@ -106,10 +115,25 @@ class Pipeline:
         self._decisions.clear()
 
 
-def default_pipeline() -> Pipeline:
-    """The Day-1 pipeline: transport, identity, mandate, cart binding.
+def default_pipeline(
+    limits: LimitStore | None = None,
+    blocks: BlockLedger | None = None,
+) -> Pipeline:
+    """Transport, identity, mandate, cart binding, bounded envelope.
 
-    G4 (bounded envelope) and G5 (content threat) slot in ahead of adjudication
-    without any change to this runner.
+    G4 carries cross-request counters, so its stores are injectable: the eval
+    harness and the sandbox need to drive them on a controlled clock, and a
+    multi-process deployment needs them shared rather than per-worker.
+
+    G5 (content threat) slots in ahead of adjudication without any change to
+    this runner.
     """
-    return Pipeline([G0Replay(), G1Identity(), G2Mandate(), G3Cart()])
+    return Pipeline(
+        [
+            G0Replay(),
+            G1Identity(),
+            G2Mandate(),
+            G3Cart(),
+            G4Envelope(limits=limits, blocks=blocks),
+        ]
+    )

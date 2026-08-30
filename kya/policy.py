@@ -58,6 +58,11 @@ class Policy:
     nonce_ttl_seconds: int = 600
     appeal_window_seconds: int = 900
 
+    #: Rolling window the tier spend caps are measured over. The ladder quotes
+    #: velocity per hour, so spend is measured per hour too — one window keeps
+    #: the two limits legible against each other.
+    spend_window_seconds: int = 3600
+
     #: Absolute ceiling regardless of tier.
     hard_max_amount: int = 500_000 * RUPEE
 

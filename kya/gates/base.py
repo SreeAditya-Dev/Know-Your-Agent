@@ -14,7 +14,7 @@ from typing import Any
 
 from kya.enums import Gate, GateVerdict
 from kya.gates.context import GateContext
-from kya.schemas import GateResult
+from kya.schemas import DecisionEnvelope, GateResult
 
 
 class BaseGate(ABC):
@@ -37,6 +37,17 @@ class BaseGate(ABC):
             )
         result.elapsed_ms = round((time.perf_counter() - started) * 1000, 3)
         return result
+
+    def commit(self, ctx: GateContext, envelope: DecisionEnvelope) -> None:
+        """Book any state this request consumed, once the decision is ALLOW.
+
+        Separated from ``evaluate`` because a gate must be able to *check* a
+        limit without *spending* it. A purchase denied three gates later moved
+        no money, and folding the two together would charge the buyer's budget
+        for transactions that never happened.
+
+        No-op by default: only stateful gates override it.
+        """
 
     # --- construction helpers -----------------------------------------------
 

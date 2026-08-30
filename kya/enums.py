@@ -21,6 +21,25 @@ class Gate(str, Enum):
     G6 = "G6"  # adjudication
 
 
+class Action(str, Enum):
+    """The money action a request is asking for.
+
+    Resolved from the request path rather than carried as a field, because the
+    gateway fronts real endpoints and the path is what it routes on. A caller
+    cannot relabel its own action to dodge the accounting that goes with it.
+    """
+
+    PURCHASE = "purchase"
+    REFUND = "refund"
+    BLOCK_DEBIT = "block_debit"  # SIMULATED rail — see kya/reserve_pay.py
+    UNKNOWN = "unknown"
+
+    @property
+    def moves_money_out(self) -> bool:
+        """True when the buyer is being debited, so it counts against spend."""
+        return self in (Action.PURCHASE, Action.BLOCK_DEBIT)
+
+
 class Severity(IntEnum):
     """How much weight a reason carries in adjudication.
 

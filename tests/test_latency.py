@@ -23,11 +23,16 @@ from kya.simulation import (
 BUDGET_P99_MS = 50.0
 SAMPLES = 300
 
+#: Small enough that 300 of them stay inside T3's rolling hourly spend cap.
+#: This test measures the cost of deciding, so it must not incidentally trip
+#: G4 — that behaviour has its own tests.
+SAMPLE_ITEM = [("SKU-CABLE-1M", "Cable 1m", 1, 99_00)]
+
 
 @pytest.fixture(scope="module")
 def latencies() -> list[float]:
     sandbox, agent, principal = standard_sandbox()
-    cart = make_cart()
+    cart = make_cart(items=SAMPLE_ITEM)
 
     # Warm the directory cache, as a running gateway would be.
     sandbox.evaluate(

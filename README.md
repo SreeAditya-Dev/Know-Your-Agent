@@ -109,7 +109,7 @@ A correctly identified, correctly authorized agent can still substitute a cart, 
 
 ## Status
 
-**Day 1 complete — verification core built and tested.**
+**Day 2 complete — verification core and bounded envelope built and tested.**
 
 | Component | State |
 |---|---|
@@ -118,20 +118,23 @@ A correctly identified, correctly authorized agent can still substitute a cart, 
 | G1 identity (RFC 9421 / Ed25519) | ✅ |
 | G2 mandate chain (AP2-shaped) | ✅ |
 | G3 cart binding + field-level drift | ✅ |
+| G4 bounded envelope · refund breaker · Reserve Pay guard | ✅ |
+| Clearing Passport store + tier ladder | ✅ SQLite, durable |
 | G6 adjudication + explainer | ✅ |
 | Idempotent decision cache | ✅ |
-| G4 bounded envelope · Reserve Pay guard | Day 2 |
 | Obligation ledger + Razorpay anchoring | Day 3 |
 | Clearing mesh, finality, reversal | Day 4 |
 | Red-team corpus + baselines | Day 5 |
 
-**94 tests passing.** Attack classes A1–A6 blocked end to end; A7–A11 arrive with G4 and the clearing layer.
+**164 tests passing.** Attack classes A1–A7 and A10 blocked end to end; A8, A9 and A11 arrive with G5 and the clearing layer.
 
-Measured data-plane latency over 2,000 requests, LLM path absent by construction:
+What Day 2 adds is the first gate that looks at an agent *across* requests, which is the only place the flood shapes are visible at all. Every request in the Day-2 attack suite passes G0–G3 cleanly — correct signature, intact mandate chain, cart bound to what was signed. Nothing is wrong with any single request, only with the sequence. That is precisely what identity-only defence cannot see.
+
+Measured data-plane latency over 2,000 requests through G0–G4, at a sustained 450 req/hr so every request is a real ALLOW rather than an early denial, LLM path absent by construction:
 
 | p50 | p95 | p99 | budget |
 |---|---|---|---|
-| 3.6 ms | 6.2 ms | **9.8 ms** | 50 ms |
+| 1.4 ms | 3.1 ms | **4.0 ms** | 50 ms |
 
 Reserve Pay / SBMD is a **labelled local simulation**; NPCI's Unified Agent Protocol has not launched and requires RBI approval. Razorpay Orders, Payments, Refunds and Webhooks are real, against `rzp_test_` keys. See [docs/07](docs/07-limitations.md) for the full honest scoping.
 

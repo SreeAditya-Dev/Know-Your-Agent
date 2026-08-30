@@ -22,11 +22,14 @@ from datetime import datetime, timedelta  # noqa: F401  (timedelta used in signa
 from kya.canonical import canonicalize, now_utc
 from kya.crypto import KeyPair, keypair_from_seed, sign_payload
 from kya.directory import AgentDirectory, StaticKeyFetcher
-from kya.enums import Tier
+from kya.enums import ObligationState, RailType, Tier
 from kya.gates.context import GateContext
 from kya.gates.pipeline import Pipeline, default_pipeline
+from kya.limits import LimitStore
 from kya.nonce import InMemoryNonceStore
+from kya.passport import InMemoryPassportStore, PassportStore
 from kya.policy import Policy, default_policy
+from kya.reserve_pay import BlockLedger, InMemoryObligations
 from kya.schemas import (
     AgentRequest,
     Cart,
@@ -36,10 +39,15 @@ from kya.schemas import (
     IntentMandate,
     LineItem,
     MandateBundle,
+    ObligationReceipt,
+    Promised,
+    RailRef,
 )
 
 DEFAULT_AUTHORITY = "sandbox.kya.local"
 DEFAULT_PATH = "/v1/agent/orders"
+REFUNDS_PATH = "/v1/agent/refunds"
+BLOCK_DEBIT_PATH = "/v1/agent/blocks/{block_id}/debit"
 SIGNATURE_LABEL = "sig1"
 COVERED_COMPONENTS = ("@method", "@authority", "@path", "content-digest")
 
@@ -98,9 +106,16 @@ class Sandbox:
     fetcher: StaticKeyFetcher = field(default_factory=StaticKeyFetcher)
     directory: AgentDirectory | None = None
     nonce_store: InMemoryNonceStore | None = None
-    pipeline: Pipeline = field(default_factory=default_pipeline)
+    #: Cross-request counters and the SIMULATED block ledger. Built here rather
+    #: than defaulted inside the gate so they share the sandbox clock — a gate
+    #: metering on wall time while the test advances a fake clock measures
+    #: nothing.
+    limits: LimitStore | None = None
+    obligations: InMemoryObligations | None = None
+    blocks: BlockLedger | None = None
+    passport_store: PassportStore | None = None
+    pipeline: Pipeline | None = None
     principals: dict[str, dict[str, str]] = field(default_factory=dict)
-    passports: dict[str, ClearingPassport] = field(default_factory=dict)
 
     #: Overrides wall-clock time for every time-dependent component at once —
     #: directory TTLs, nonce expiry, mandate validity. Rolling one clock keeps
@@ -112,6 +127,16 @@ class Sandbox:
             self.nonce_store = InMemoryNonceStore(clock=self.clock)
         if self.directory is None:
             self.directory = AgentDirectory(self.fetcher, clock=self.clock)
+        if self.limits is None:
+            self.limits = LimitStore(clock=self.clock)
+        if self.obligations is None:
+            self.obligations = InMemoryObligations()
+        if self.blocks is None:
+            self.blocks = BlockLedger(obligations=self.obligations, clock=self.clock)
+        if self.passport_store is None:
+            self.passport_store = InMemoryPassportStore(clock=self.clock)
+        if self.pipeline is None:
+            self.pipeline = default_pipeline(limits=self.limits, blocks=self.blocks)
 
     # --- time control --------------------------------------------------------
 
@@ -140,10 +165,22 @@ class Sandbox:
 
     def passport_for(self, agent_id: str, tier: Tier = Tier.T3) -> ClearingPassport:
         """Passports default to T3 in tests so tier ceilings do not mask the
-        behaviour under test. Tier-specific cases set it explicitly."""
-        if agent_id not in self.passports:
-            self.passports[agent_id] = ClearingPassport(agent_id=agent_id, tier=tier)
-        return self.passports[agent_id]
+        behaviour under test. Tier-specific cases set it explicitly.
+
+        The tier is pinned rather than derived here: these are fixtures for
+        gates that *consume* a tier, and making them earn one through simulated
+        clearings would couple every G4 test to the ladder's thresholds.
+        """
+        assert self.passport_store is not None
+        passport = self.passport_store.get(agent_id)
+        if passport.tier is not tier:
+            passport.tier = tier
+            self.passport_store.put(passport)
+        return passport
+
+    def set_tier(self, agent_id: str, tier: Tier) -> ClearingPassport:
+        """Move an agent to a tier directly, to exercise ceilings."""
+        return self.passport_for(agent_id, tier)
 
     def context(
         self,
@@ -168,6 +205,7 @@ class Sandbox:
         tier: Tier = Tier.T3,
         now: datetime | None = None,
     ):
+        assert self.pipeline is not None
         return self.pipeline.evaluate(self.context(request, tier=tier, now=now))
 
 
@@ -210,6 +248,7 @@ def make_mandates(
     max_amount: int | None = None,
     allowed_merchants: list[str] | None = None,
     allowed_categories: list[str] | None = None,
+    max_transactions: int | None = None,
     issued_at: datetime | None = None,
     intent_ttl: timedelta = timedelta(hours=1),
     cart_ttl: timedelta = timedelta(minutes=15),
@@ -229,6 +268,7 @@ def make_mandates(
                 else [cart.merchant_id]
             ),
             allowed_categories=allowed_categories,
+            max_transactions=max_transactions,
         ),
         issued_at=issued,
         expires_at=issued + intent_ttl,
@@ -268,6 +308,26 @@ def content_digest(body: dict) -> str:
     return f"sha-256=:{base64.b64encode(raw).decode('ascii')}:"
 
 
+def request_body(
+    cart: Cart | None,
+    mandates: MandateBundle | None,
+    extra: dict | None = None,
+) -> dict:
+    """The signed body. One builder, so signing and re-signing cannot diverge.
+
+    ``extra`` carries the action-specific payload — a refund amount, a block
+    debit — which is covered by the signature exactly like the cart is. An
+    amount that is not signed is an amount an intermediary can change.
+    """
+    body: dict = {
+        "cart": cart.model_dump(mode="json") if cart is not None else None,
+        "mandates": mandates.model_dump(mode="json") if mandates is not None else None,
+    }
+    if extra:
+        body.update(extra)
+    return body
+
+
 def build_signed_request(
     agent: AgentIdentity,
     mandates: MandateBundle,
@@ -282,6 +342,7 @@ def build_signed_request(
     idempotency_key: str | None = None,
     free_text: dict[str, str] | None = None,
     callback_url: str | None = None,
+    extra_body: dict | None = None,
 ) -> AgentRequest:
     """Produce a fully valid signed request. Attacks perturb what this returns."""
     created_at = created or now_utc()
@@ -289,7 +350,7 @@ def build_signed_request(
     expires_ts = int((created_at + expires_in).timestamp())
     nonce = nonce or uuid.uuid4().hex
 
-    body = {"cart": cart.model_dump(mode="json"), "mandates": mandates.model_dump(mode="json")}
+    body = request_body(cart, mandates, extra_body)
     digest_header = content_digest(body)
 
     components = " ".join(f'"{c}"' for c in COVERED_COMPONENTS)
@@ -348,15 +409,107 @@ def resign_request(agent: AgentIdentity, request: AgentRequest) -> AgentRequest:
     assert request.signature_input_raw is not None
     raw_params = request.signature_input_raw.split("=", 1)[1]
 
-    body = {
-        "cart": request.cart.model_dump(mode="json") if request.cart else None,
-        "mandates": request.mandates.model_dump(mode="json") if request.mandates else None,
-    }
+    extra = {k: v for k, v in request.body.items() if k not in ("cart", "mandates")}
+    body = request_body(request.cart, request.mandates, extra)
     request.body = body
     request.headers["content-digest"] = content_digest(body)
 
     request.signature = f"{SIGNATURE_LABEL}=:{_sign_request(agent, request, raw_params)}:"
     return request
+
+
+# --- action-specific requests ------------------------------------------------
+#
+# A refund or a block debit still carries the full mandate chain and the cart it
+# refers to. That is not ceremony: it is how the agent proves *which* order it
+# is acting against, and it keeps G0-G3 identical across every action so the
+# only thing that changes between a purchase and a refund is the accounting.
+
+
+def build_refund_request(
+    agent: AgentIdentity,
+    mandates: MandateBundle,
+    cart: Cart,
+    amount: int,
+    *,
+    payment_id: str = "pay_sandbox_0001",
+    path: str = REFUNDS_PATH,
+    **kwargs,
+) -> AgentRequest:
+    """A guarded refund of ``amount`` paise against an earlier order."""
+    return build_signed_request(
+        agent,
+        mandates,
+        cart,
+        path=path,
+        extra_body={"refund": {"amount": amount, "payment_id": payment_id}},
+        **kwargs,
+    )
+
+
+def build_block_debit_request(
+    agent: AgentIdentity,
+    mandates: MandateBundle,
+    cart: Cart,
+    block_id: str,
+    amount: int,
+    **kwargs,
+) -> AgentRequest:
+    """A debit against a SIMULATED Reserve Pay block."""
+    return build_signed_request(
+        agent,
+        mandates,
+        cart,
+        path=BLOCK_DEBIT_PATH.format(block_id=block_id),
+        extra_body={"debit": {"amount": amount, "block_id": block_id}},
+        **kwargs,
+    )
+
+
+# --- obligations -------------------------------------------------------------
+
+
+def make_obligation(
+    agent: AgentIdentity,
+    principal: Principal,
+    cart: Cart,
+    *,
+    rail_type: RailType = RailType.RESERVE_PAY_BLOCK,
+    rail_ref: str = "",
+    amount_due: int | None = None,
+    mandate_chain_hash: str = "",
+    created_at: datetime | None = None,
+    ttl: timedelta = timedelta(days=7),
+    state: ObligationState = ObligationState.OPEN,
+) -> ObligationReceipt:
+    """A minimal obligation receipt, enough to back a debit.
+
+    Day 3 mints these from the pipeline and chains them. This builder exists so
+    the block guard can be exercised before that lands — the guard's question is
+    "does an open obligation cover this debit?", and it does not care who minted
+    the answer.
+    """
+    created = created_at or now_utc()
+    receipt = ObligationReceipt(
+        obligation_id=f"obl_{uuid.uuid4().hex[:12]}",
+        principal_ref=principal.principal_ref,
+        agent_id=agent.agent_id,
+        agent_key_id=agent.keypair.key_id,
+        merchant_id=cart.merchant_id,
+        promised=Promised(line_items=list(cart.line_items), total=cart.total),
+        mandate_chain_hash=mandate_chain_hash,
+        rail=RailRef(
+            type=rail_type,
+            ref=rail_ref,
+            simulated=rail_type is RailType.RESERVE_PAY_BLOCK,
+        ),
+        created_at=created,
+        expires_at=created + ttl,
+        state=state,
+        amount_due=cart.total if amount_due is None else amount_due,
+    )
+    receipt.self_hash = receipt.compute_hash()
+    return receipt
 
 
 def standard_sandbox() -> tuple[Sandbox, AgentIdentity, Principal]:
