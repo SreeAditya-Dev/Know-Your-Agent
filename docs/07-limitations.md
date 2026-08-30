@@ -29,6 +29,7 @@ Worth stating plainly because it is the kind of thing no amount of testing again
 - **`ATT` and `PROOF` evidence classes.** The lattice supports them; no verifier produces them. TEE attestation and zero-knowledge proofs are out of scope for seven days.
 - **Human verifier.** RAILS lists human review as a verifier class. We model it as the quarantine queue rather than a mesh participant.
 - **Multi-merchant / marketplace topologies.** One merchant, one gateway.
+- **A live bridge to Razorpay's `razorpay-mcp-server`.** `kya/rails/mcp_adapter.py` exposes KYA's own guarded actions over MCP, gated identically to the HTTP API. It does not proxy Razorpay's separate 35+-tool MCP server against the raw Orders/Payments API — bridging two processes and two auth models honestly was out of scope for this window.
 
 ## Structural limits — things this design cannot fix
 
@@ -56,7 +57,7 @@ Anticipated before the run; the actual list is generated from measured results a
 
 ## Honest scoping note
 
-This is a seven-day build (29 Aug – 5 Sep 2026). The cut order, documented in [`../PLAN.md`](../PLAN.md), is: MCP wrapper → dashboard → semantic verifier → G5 content threat.
+This is a seven-day build (29 Aug – 5 Sep 2026). The cut order, documented in [`../PLAN.md`](../PLAN.md), was: MCP wrapper → dashboard → semantic verifier → G5 content threat. All four shipped; nothing on that list was actually cut.
 
 If components are missing at submission, they are listed here with what was cut and why — not quietly omitted.
 

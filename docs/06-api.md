@@ -113,6 +113,24 @@ GET /dashboard/quarantine
 ```
 Server-rendered. Live sandbox decision feed, per-decision gate trace inspection, frozen benchmark metrics, and the human review queue.
 
+### MCP tool surface
+
+```
+python -m kya.rails.mcp_adapter
+```
+
+`kya/rails/mcp_adapter.py` exposes the same guarded actions over MCP (stdio transport), so an MCP-speaking agent — Claude Desktop, Claude Code, or a custom agent framework — reaches this merchant's money actions only through the gate pipeline, not around it. The MCP layer is a transport, not a bypass: every tool call still requires a fully RFC 9421-signed `AgentRequest` with an intact mandate chain, and an unsigned or tampered call is denied by the same gate that would deny it over HTTP.
+
+| Tool | Money-moving | Equivalent HTTP route |
+|---|:--:|---|
+| `agent_purchase(request)` | yes | `POST /v1/agent/orders` |
+| `agent_refund(request, payment_id, amount)` | yes | `POST /v1/agent/refunds` |
+| `get_decision(decision_id)` | no | `GET /v1/decisions/{id}` |
+| `get_obligation(obligation_id)` | no | `GET /v1/obligations/{id}` |
+| `verify_ledger()` | no | `GET /v1/ledger/verify` |
+
+This is a KYA-native MCP server, not a proxy for Razorpay's own `razorpay-mcp-server` (a separate Go binary exposing 35+ tools directly against the raw Orders/Payments API). Bridging the two honestly — two processes, two auth models — is out of scope for this build window; see [07](07-limitations.md). What ships is the thing Track 01 actually asks for: an agentic tool surface with the gateway's gates in the loop.
+
 ## Reason codes
 
 Frozen in `kya/reasons.py` on Day 0, imported everywhere. Stable identifiers — the vocabulary shared by the audit trail, the dashboard, the explainer and the metrics table.

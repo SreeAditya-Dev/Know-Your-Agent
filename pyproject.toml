@@ -18,6 +18,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "pytest-cov>=6"]
 llm = ["anthropic>=0.40"]
+mcp = ["mcp>=1.20"]
 
 [build-system]
 requires = ["setuptools>=68"]
