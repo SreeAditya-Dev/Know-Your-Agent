@@ -136,9 +136,32 @@ def aggregate(ctx: VerificationContext, outcome: MeshOutcome) -> ClearingDecisio
         emitted_at=ctx.now,
     )
     decision.decision_hash = digest(
-        decision.model_dump(mode="python", exclude={"decision_hash"})
+        _quantize_floats(decision.model_dump(mode="python", exclude={"decision_hash"}))
     )
     return decision
+
+
+def _quantize_floats(value):
+    """Make a clearing decision hashable under the money-grade canonicalizer.
+
+    The canonicalizer forbids floats everywhere, deliberately, so that money —
+    which is integer paise — can never depend on float formatting. A clearing
+    decision is the one structure that legitimately carries a non-money float:
+    verifier confidence in [0, 1]. Rounding each such float to an integer basis
+    point before hashing keeps the decision hash deterministic and stable
+    across implementations, without relaxing the no-floats rule that protects
+    the amounts. Four decimal places is finer than any confidence the mesh
+    produces, so the quantisation is lossless in practice.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, float):
+        return {"__q4__": int(round(value * 10_000))}
+    if isinstance(value, dict):
+        return {k: _quantize_floats(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_quantize_floats(v) for v in value]
+    return value
 
 
 def _decide(outputs: list[VerifierOutput]) -> tuple[str, float]:

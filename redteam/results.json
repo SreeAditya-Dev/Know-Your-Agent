@@ -1,0 +1,305 @@
+{
+  "corpus_hash": "e977fad495d83bed3ebcb103d4bbda7dccf74fb20315447175da21bc3b06452b",
+  "corpus_verified": true,
+  "n_sessions": 530,
+  "n_attacks": 130,
+  "n_legit": 400,
+  "baselines": {
+    "B0": {
+      "recall": 0.0,
+      "precision": 1.0,
+      "f1": 0.0,
+      "fpr": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 130,
+      "tn": 400,
+      "denied_paise": 0,
+      "stepped_up_paise": 0,
+      "held_paise": 0,
+      "clean_allow": 400,
+      "per_class": {
+        "A1": {
+          "total": 12,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A2": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A3": {
+          "total": 12,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A4": {
+          "total": 15,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A5": {
+          "total": 12,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A6": {
+          "total": 12,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A7": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A8": {
+          "total": 16,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A9": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A10": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A11": {
+          "total": 11,
+          "stopped": 0,
+          "rate": 0.0
+        }
+      },
+      "latency_p50": 0.0,
+      "latency_p95": 0.0,
+      "latency_p99": 0.0
+    },
+    "B1": {
+      "recall": 0.26153846153846155,
+      "precision": 1.0,
+      "f1": 0.41463414634146345,
+      "fpr": 0.0,
+      "tp": 34,
+      "fp": 0,
+      "fn": 96,
+      "tn": 400,
+      "denied_paise": 0,
+      "stepped_up_paise": 29136380,
+      "held_paise": 0,
+      "clean_allow": 380,
+      "per_class": {
+        "A1": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A2": {
+          "total": 10,
+          "stopped": 10,
+          "rate": 1.0
+        },
+        "A3": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A4": {
+          "total": 15,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A5": {
+          "total": 12,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A6": {
+          "total": 12,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A7": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A8": {
+          "total": 16,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A9": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A10": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A11": {
+          "total": 11,
+          "stopped": 0,
+          "rate": 0.0
+        }
+      },
+      "latency_p50": 0.0,
+      "latency_p95": 0.0,
+      "latency_p99": 0.0
+    },
+    "B2": {
+      "recall": 0.5615384615384615,
+      "precision": 1.0,
+      "f1": 0.7192118226600985,
+      "fpr": 0.0,
+      "tp": 73,
+      "fp": 0,
+      "fn": 57,
+      "tn": 400,
+      "denied_paise": 0,
+      "stepped_up_paise": 29136380,
+      "held_paise": 0,
+      "clean_allow": 380,
+      "per_class": {
+        "A1": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A2": {
+          "total": 10,
+          "stopped": 10,
+          "rate": 1.0
+        },
+        "A3": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A4": {
+          "total": 15,
+          "stopped": 15,
+          "rate": 1.0
+        },
+        "A5": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A6": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A7": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A8": {
+          "total": 16,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A9": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A10": {
+          "total": 10,
+          "stopped": 0,
+          "rate": 0.0
+        },
+        "A11": {
+          "total": 11,
+          "stopped": 0,
+          "rate": 0.0
+        }
+      },
+      "latency_p50": 0.0,
+      "latency_p95": 0.0,
+      "latency_p99": 0.0
+    },
+    "B3": {
+      "recall": 0.9461538461538461,
+      "precision": 1.0,
+      "f1": 0.9723320158102766,
+      "fpr": 0.0,
+      "tp": 123,
+      "fp": 0,
+      "fn": 7,
+      "tn": 400,
+      "denied_paise": 0,
+      "stepped_up_paise": 29136380,
+      "held_paise": 0,
+      "clean_allow": 380,
+      "per_class": {
+        "A1": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A2": {
+          "total": 10,
+          "stopped": 10,
+          "rate": 1.0
+        },
+        "A3": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A4": {
+          "total": 15,
+          "stopped": 15,
+          "rate": 1.0
+        },
+        "A5": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A6": {
+          "total": 12,
+          "stopped": 12,
+          "rate": 1.0
+        },
+        "A7": {
+          "total": 10,
+          "stopped": 10,
+          "rate": 1.0
+        },
+        "A8": {
+          "total": 16,
+          "stopped": 12,
+          "rate": 0.75
+        },
+        "A9": {
+          "total": 10,
+          "stopped": 10,
+          "rate": 1.0
+        },
+        "A10": {
+          "total": 10,
+          "stopped": 10,
+          "rate": 1.0
+        },
+        "A11": {
+          "total": 11,
+          "stopped": 8,
+          "rate": 0.7272727272727273
+        }
+      },
+      "latency_p50": 1.402,
+      "latency_p95": 3.061,
+      "latency_p99": 7.876
+    }
+  }
+}

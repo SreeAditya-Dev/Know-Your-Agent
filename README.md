@@ -93,7 +93,25 @@ The core measurement. **B1 is the shipped state of the art** — what a merchant
 
 A correctly identified, correctly authorized agent can still substitute a cart, flood refunds, drain a block, and take delivery of something other than what was promised.
 
-*(Measured block rates, precision/recall and false-positive cost replace these checkmarks once the eval runs — see [docs/05](docs/05-evaluation.md).)*
+**These are now measured, not asserted.** Running the red-team harness over a frozen corpus of **530 sessions** (130 attacks across the 11 classes, 400 legitimate) gives:
+
+| Posture | Attacks stopped | Recall | Precision | False-positive rate |
+|---|:--:|:--:|:--:|:--:|
+| B0 no gateway | 0/130 | 0% | 100% | 0.0% |
+| B1 identity-only (TAP / Web Bot Auth) | 34/130 | 26% | 100% | 0.0% |
+| B2 + mandate (AP2) | 73/130 | 56% | 100% | 0.0% |
+| **B3 full KYA** | **123/130** | **95%** | **100%** | **0.0%** |
+
+Identity-only defence — the shipped state of the art — stops one attack in four. The 7 attacks B3 does not stop are a declared, open exception list: a fluent prompt-injection paraphrase that carries no marker the deterministic content gate matches, and a counterfeit delivery that satisfies every recorded acceptance criterion (the semantic verifier flags it, but an LLM's opinion is `SELF`-class and cannot clear or dispute a settlement alone). Not one legitimate session is denied — false-positive cost is entirely stepped-up friction, ₹0 in refused revenue. Data-plane p99 is **~1.5 ms** against a 50 ms budget.
+
+Reproduce it:
+
+```bash
+python -m redteam.run --verify     # corpus matches its committed SHA-256
+python -m redteam.run --all        # prints the full table, metrics and exception list
+```
+
+See [`redteam/REPORT.md`](redteam/REPORT.md) for the generated report and [docs/05](docs/05-evaluation.md) for the anti-rigging protocol.
 
 ## Documentation
 
@@ -109,7 +127,7 @@ A correctly identified, correctly authorized agent can still substitute a cart, 
 
 ## Status
 
-**Day 3 complete — the obligation layer is live and anchored.**
+**Day 5 complete — the gateway, the clearing layer and the measured red-team evaluation are all live.**
 
 | Component | State |
 |---|---|
@@ -126,11 +144,12 @@ A correctly identified, correctly authorized agent can still substitute a cart, 
 | Razorpay anchoring (`order.notes.kya_obligation`) | ✅ verified against live `rzp_test_` |
 | Webhook intake (signature-verified, deduplicated) | ✅ |
 | Reconciler — graceful failure #1 | ✅ zero duplicate charges |
-| Clearing mesh, finality, reversal | ✅ implemented |
+| AgentPay recovery planner | ✅ diagnose, bind verified captures, bounded re-check or human review |
+| Clearing mesh, finality, reversal | ✅ implemented, driven end-to-end by the harness |
 | G5 content threat | ✅ deterministic marker and callback-host checks |
-| Red-team corpus + baselines | Day 5 |
+| Red-team corpus + baselines B0–B3 + metrics | ✅ 530-session frozen corpus, `python -m redteam.run --all` |
 
-**253 offline tests passing**, with four additional live test-mode Razorpay tests that require network access and credentials. Attack classes A1–A10 are covered by the inline gateway; obligation--fulfilment mismatch (A11) is handled by the clearing layer.
+**270 offline tests passing**, with four additional live test-mode Razorpay tests that require network access and credentials. Attack classes A1–A10 are covered by the inline gateway; obligation--fulfilment mismatch (A11) is handled by the clearing layer. The red-team harness (`redteam/`) runs the identical corpus through four defence postures and reports the comparison, precision/recall, decomposed false-positive cost, latency percentiles and an honest exception list; the corpus is frozen to a committed SHA-256 before any tuning, and the run refuses to report numbers against a corpus that does not match it.
 
 Day 2 added the first gate that looks at an agent *across* requests — the only place the flood shapes are visible at all. Every request in that attack suite passes G0–G3 cleanly, so nothing is wrong with any single request, only with the sequence, which is precisely what identity-only defence cannot see.
 
@@ -141,6 +160,8 @@ Day 3 adds the artifact that makes "was the obligation satisfied?" answerable. A
 - **Payment does not satisfy an obligation.** A capture sets `amount_due` to zero and leaves the obligation OPEN. Collapsing the two would erase the distinction the project exists to make.
 
 Day 4 completes the deterministic G5 boundary: instruction-shaped free text is quarantined without retaining the hostile content in the decision trace, and callback URLs must match the agent's configured exact-host allowlist. The same pass also adds the clearing mesh, finality, settlement and reversal implementation; no model or network call can influence the inline money decision.
+
+The AgentPay Autopilot extension translates reconciler outcomes into a bounded recovery plan. A verified capture is bound to the existing obligation and completed without a retry; an existing but unpaid order is observed again; lookup uncertainty and rail outages are retried only as read-only checks; and an old missing order goes to human review rather than being recreated blindly. See `kya/autopilot.py`.
 
 Measured data-plane latency over 2,000 requests through G0–G4, at a sustained 450 req/hr so every request is a real ALLOW rather than an early denial, LLM path absent by construction:
 
