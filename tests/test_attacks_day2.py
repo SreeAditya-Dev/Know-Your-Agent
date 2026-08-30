@@ -160,7 +160,7 @@ class TestA10ReservePayBlockDrain:
     ):
         cart = make_cart(items=[("SKU-A", "Item", 1, 5_000_00)])
         mandates = make_mandates(agent, principal, cart)
-        obligation = sandbox.obligations.add(
+        obligation = sandbox.ledger.append(
             make_obligation(
                 agent,
                 principal,
@@ -204,7 +204,7 @@ class TestA10ReservePayBlockDrain:
         ledger while denying would be worse than no guard."""
         cart = make_cart(items=[("SKU-A", "Item", 1, 90_000_00)])
         mandates = make_mandates(agent, principal, cart, max_amount=10_000_000_00)
-        sandbox.obligations.add(
+        sandbox.ledger.append(
             make_obligation(
                 agent,
                 principal,

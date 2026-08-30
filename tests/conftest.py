@@ -48,3 +48,30 @@ def mandates(agent, principal, cart) -> MandateBundle:
 def good_request(agent, mandates, cart) -> AgentRequest:
     """A request that should pass every gate."""
     return build_signed_request(agent, mandates, cart)
+
+
+# --- Day 3: obligations, rail, gateway ---------------------------------------
+#
+# Drawn off the sandbox rather than constructed independently, so a test is
+# always exercising the same wiring the gateway ships with. Fixtures that build
+# their own ledger would happily pass while the real assembly was broken.
+
+
+@pytest.fixture
+def merchant(sandbox):
+    return sandbox.merchant
+
+
+@pytest.fixture
+def ledger(sandbox):
+    return sandbox.ledger
+
+
+@pytest.fixture
+def rail(sandbox):
+    return sandbox.rail
+
+
+@pytest.fixture
+def gateway(sandbox):
+    return sandbox.gateway()

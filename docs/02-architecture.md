@@ -136,11 +136,14 @@ kya/
 ├─ passport.py           Clearing Passport store · tier movement rules
 ├─ reserve_pay.py        SIMULATED SBMD block ledger · unbacked-debit guard
 ├─ policy.py             tier ladder · breaker thresholds (data, not code)
-├─ obligation/           receipt · ledger (hash chain) · anchor
+├─ obligation/           receipt (minting) · ledger (hash chain) · anchor
+├─ rails/                razorpay_client (live + fake) · webhooks
+├─ gateway.py            decision → obligation → rail orchestration
+├─ reconcile.py          lost-response recovery; never writes to the rail
 ├─ clearing/             evidence · mesh · verifiers/ · finality · reversal
-├─ rails/                razorpay_client · mcp_adapter
-├─ api/                  gateway routes · webhooks · dashboard
-└─ config.py             policy YAML loader
+├─ api/                  routes · dashboard
+├─ live_check.py         runnable anchor proof against test-mode Razorpay
+└─ config.py             environment settings (secrets and paths only)
 ```
 
 `reasons.py` and `schemas.py` are frozen on Day 0 before any gate is implemented. In a seven-day build, a mid-week schema change is the failure mode that costs a day.

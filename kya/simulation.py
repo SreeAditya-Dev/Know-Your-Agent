@@ -26,10 +26,14 @@ from kya.enums import ObligationState, RailType, Tier
 from kya.gates.context import GateContext
 from kya.gates.pipeline import Pipeline, default_pipeline
 from kya.limits import LimitStore
+from kya.gateway import Gateway
 from kya.nonce import InMemoryNonceStore
+from kya.obligation.ledger import ObligationLedger
+from kya.obligation.receipt import MerchantIdentity, ReceiptMinter
 from kya.passport import InMemoryPassportStore, PassportStore
 from kya.policy import Policy, default_policy
-from kya.reserve_pay import BlockLedger, InMemoryObligations
+from kya.rails.razorpay_client import FakeRazorpayClient
+from kya.reserve_pay import BlockLedger
 from kya.schemas import (
     AgentRequest,
     Cart,
@@ -45,6 +49,10 @@ from kya.schemas import (
 )
 
 DEFAULT_AUTHORITY = "sandbox.kya.local"
+#: Tier a sandbox agent starts at. High on purpose, so that a test aimed at
+#: one gate is not silently failing on another gate's ceiling.
+DEFAULT_SANDBOX_TIER = Tier.T3
+
 DEFAULT_PATH = "/v1/agent/orders"
 REFUNDS_PATH = "/v1/agent/refunds"
 BLOCK_DEBIT_PATH = "/v1/agent/blocks/{block_id}/debit"
@@ -111,9 +119,13 @@ class Sandbox:
     #: metering on wall time while the test advances a fake clock measures
     #: nothing.
     limits: LimitStore | None = None
-    obligations: InMemoryObligations | None = None
+    #: The real hash-chained ledger, not a stand-in. G4's block guard reads it
+    #: through the ``ObligationSource`` protocol, so the wiring the tests
+    #: exercise is the wiring the gateway ships with.
+    ledger: ObligationLedger | None = None
     blocks: BlockLedger | None = None
     passport_store: PassportStore | None = None
+    rail: FakeRazorpayClient | None = None
     pipeline: Pipeline | None = None
     principals: dict[str, dict[str, str]] = field(default_factory=dict)
 
@@ -121,6 +133,9 @@ class Sandbox:
     #: directory TTLs, nonce expiry, mandate validity. Rolling one clock keeps
     #: them consistent; separate clocks drift and produce false failures.
     _now: datetime | None = field(default=None, repr=False)
+    _seeded: set[str] = field(default_factory=set, repr=False)
+    _merchant: MerchantIdentity | None = field(default=None, repr=False)
+    _gateway: Gateway | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         if self.nonce_store is None:
@@ -129,12 +144,14 @@ class Sandbox:
             self.directory = AgentDirectory(self.fetcher, clock=self.clock)
         if self.limits is None:
             self.limits = LimitStore(clock=self.clock)
-        if self.obligations is None:
-            self.obligations = InMemoryObligations()
+        if self.ledger is None:
+            self.ledger = ObligationLedger(self.merchant, clock=self.clock)
         if self.blocks is None:
-            self.blocks = BlockLedger(obligations=self.obligations, clock=self.clock)
+            self.blocks = BlockLedger(obligations=self.ledger, clock=self.clock)
         if self.passport_store is None:
             self.passport_store = InMemoryPassportStore(clock=self.clock)
+        if self.rail is None:
+            self.rail = FakeRazorpayClient()
         if self.pipeline is None:
             self.pipeline = default_pipeline(limits=self.limits, blocks=self.blocks)
 
@@ -151,6 +168,34 @@ class Sandbox:
         self._now = self.clock() + delta
         return self._now
 
+    @property
+    def merchant(self) -> MerchantIdentity:
+        """Deterministic sandbox merchant, so receipt hashes reproduce."""
+        if self._merchant is None:
+            self._merchant = MerchantIdentity(
+                merchant_id=self.policy.merchant_id,
+                keypair=keypair_from_seed(
+                    f"{self.policy.merchant_id}-obligation-key-1",
+                    _seed(f"merchant-{self.policy.merchant_id}"),
+                ),
+            )
+        return self._merchant
+
+    def gateway(self, **kwargs) -> Gateway:
+        """A gateway wired to this sandbox's pipeline, ledger and rail."""
+        assert self.ledger is not None and self.rail is not None
+        if self._gateway is None:
+            self._gateway = Gateway(
+                pipeline=self.pipeline,
+                ledger=self.ledger,
+                rail=self.rail,
+                minter=ReceiptMinter(self.merchant, clock=self.clock),
+                context_factory=self.context,
+                clock=self.clock,
+                **kwargs,
+            )
+        return self._gateway
+
     def register_agent(self, agent: AgentIdentity) -> AgentIdentity:
         self.fetcher.publish(
             agent.origin, agent.keypair.key_id, agent.keypair.public_b64u
@@ -163,19 +208,32 @@ class Sandbox:
         ] = principal.keypair.public_b64u
         return principal
 
-    def passport_for(self, agent_id: str, tier: Tier = Tier.T3) -> ClearingPassport:
+    def passport_for(
+        self, agent_id: str, tier: Tier | None = None
+    ) -> ClearingPassport:
         """Passports default to T3 in tests so tier ceilings do not mask the
         behaviour under test. Tier-specific cases set it explicitly.
 
         The tier is pinned rather than derived here: these are fixtures for
         gates that *consume* a tier, and making them earn one through simulated
         clearings would couple every G4 test to the ladder's thresholds.
+
+        An explicit ``tier`` always wins, so a test can move the same agent up
+        and down the ladder between calls. Passing nothing keeps whatever the
+        agent already has — which is what lets ``set_tier`` stick for callers
+        like the gateway, which builds a context without opinions about tier.
         """
         assert self.passport_store is not None
         passport = self.passport_store.get(agent_id)
-        if passport.tier is not tier:
+
+        if agent_id not in self._seeded:
+            self._seeded.add(agent_id)
+            passport.tier = DEFAULT_SANDBOX_TIER if tier is None else tier
+            self.passport_store.put(passport)
+        elif tier is not None and passport.tier is not tier:
             passport.tier = tier
             self.passport_store.put(passport)
+
         return passport
 
     def set_tier(self, agent_id: str, tier: Tier) -> ClearingPassport:
@@ -185,7 +243,7 @@ class Sandbox:
     def context(
         self,
         request: AgentRequest,
-        tier: Tier = Tier.T3,
+        tier: Tier | None = None,
         now: datetime | None = None,
     ) -> GateContext:
         assert self.directory is not None and self.nonce_store is not None
@@ -202,7 +260,7 @@ class Sandbox:
     def evaluate(
         self,
         request: AgentRequest,
-        tier: Tier = Tier.T3,
+        tier: Tier | None = None,
         now: datetime | None = None,
     ):
         assert self.pipeline is not None

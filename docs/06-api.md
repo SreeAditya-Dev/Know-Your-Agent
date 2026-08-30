@@ -122,25 +122,35 @@ Frozen in `kya/reasons.py` on Day 0, imported everywhere. Stable identifiers —
 | `R001` | G0 | `replay_nonce_reused` |
 | `R002` | G0 | `timestamp_skew` |
 | `R003` | G0 | `signature_expired` |
+| `R004` | G0 | `nonce_store_unavailable` |
 | `I001` | G1 | `signature_absent` |
 | `I002` | G1 | `signature_invalid` |
 | `I003` | G1 | `unknown_key` |
 | `I004` | G1 | `directory_unreachable_degraded` |
+| `I005` | G1 | `signature_agent_missing` |
 | `M001` | G2 | `mandate_absent` |
 | `M002` | G2 | `chain_broken` |
 | `M003` | G2 | `mandate_expired` |
 | `M004` | G2 | `principal_mismatch` |
+| `M005` | G2 | `mandate_signature_invalid` |
+| `M006` | G2 | `agent_not_delegated` |
 | `C001` | G3 | `cart_hash_mismatch` |
 | `C002` | G3 | `price_drift` |
 | `C003` | G3 | `sku_substitution` |
 | `C004` | G3 | `constraint_violation` |
+| `C005` | G3 | `cart_total_inconsistent` |
 | `E001` | G4 | `velocity_exceeded` |
 | `E002` | G4 | `spend_cap` |
 | `E003` | G4 | `refund_breaker_open` |
 | `E004` | G4 | `block_debit_unbacked` |
 | `E005` | G4 | `tier_ceiling` |
+| `E006` | G4 | `block_reserve_exhausted` |
 | `T001` | G5 | `injection_marker` |
 | `T002` | G5 | `callback_domain_unregistered` |
+| `A001` | G6 | `gate_unresolved` |
+| `A002` | G6 | `policy_step_up_threshold` |
+
+Degradation codes (`R004`, `I004`) propose STEP_UP rather than DENY: they mean a control could not be *checked*, not that it was failed. Fail closed on evidence of wrongdoing, fail soft on absence of evidence.
 
 ## Configuration
 

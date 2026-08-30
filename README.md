@@ -109,7 +109,7 @@ A correctly identified, correctly authorized agent can still substitute a cart, 
 
 ## Status
 
-**Day 2 complete — verification core and bounded envelope built and tested.**
+**Day 3 complete — the obligation layer is live and anchored.**
 
 | Component | State |
 |---|---|
@@ -122,13 +122,23 @@ A correctly identified, correctly authorized agent can still substitute a cart, 
 | Clearing Passport store + tier ladder | ✅ SQLite, durable |
 | G6 adjudication + explainer | ✅ |
 | Idempotent decision cache | ✅ |
-| Obligation ledger + Razorpay anchoring | Day 3 |
+| Obligation receipts + hash-chained ledger | ✅ append-only, tamper-evident |
+| Razorpay anchoring (`order.notes.kya_obligation`) | ✅ verified both ways |
+| Webhook intake (signature-verified, deduplicated) | ✅ |
+| Reconciler — graceful failure #1 | ✅ zero duplicate charges |
 | Clearing mesh, finality, reversal | Day 4 |
+| G5 content threat | Day 4–5 |
 | Red-team corpus + baselines | Day 5 |
 
-**164 tests passing.** Attack classes A1–A7 and A10 blocked end to end; A8, A9 and A11 arrive with G5 and the clearing layer.
+**246 tests passing** (2 skipped without live Razorpay credentials). Attack classes A1–A7 and A10 blocked end to end; A8, A9 and A11 arrive with G5 and the clearing layer.
 
-What Day 2 adds is the first gate that looks at an agent *across* requests, which is the only place the flood shapes are visible at all. Every request in the Day-2 attack suite passes G0–G3 cleanly — correct signature, intact mandate chain, cart bound to what was signed. Nothing is wrong with any single request, only with the sequence. That is precisely what identity-only defence cannot see.
+Day 2 added the first gate that looks at an agent *across* requests — the only place the flood shapes are visible at all. Every request in that attack suite passes G0–G3 cleanly, so nothing is wrong with any single request, only with the sequence, which is precisely what identity-only defence cannot see.
+
+Day 3 adds the artifact that makes "was the obligation satisfied?" answerable. An allowed purchase mints a signed Obligation Receipt recording what was promised — SKU, price, delivery window, return terms, plus the predicates that would satisfy it and the evidence class each one requires — *before* the rail is touched, and writes its hash into the Razorpay order's `notes`. Three properties follow:
+
+- **The audit trail is verifiable by someone who does not trust us.** A reviewer with Razorpay dashboard access reads `notes.kya_obligation`, recomputes the hash from the receipt, and matches the two. The order's own timestamp proves the receipt predates capture.
+- **The ledger is append-only.** State changes append a new version, so what version 1 promised is never rewritten — which is why the anchor still verifies after an obligation has been paid, partially refunded and reversed.
+- **Payment does not satisfy an obligation.** A capture sets `amount_due` to zero and leaves the obligation OPEN. Collapsing the two would erase the distinction the project exists to make.
 
 Measured data-plane latency over 2,000 requests through G0–G4, at a sustained 450 req/hr so every request is a real ALLOW rather than an early denial, LLM path absent by construction:
 
@@ -145,8 +155,23 @@ pip install -e ".[dev]"
 pytest tests/ -q
 ```
 
-No network or Razorpay credentials are needed for the current test suite — the
-agent directory, principals and rails are all in-process fixtures.
+No network or Razorpay credentials are needed. The agent directory, principals
+and payment rail are all in-process fixtures, and the two tests that do need
+live keys skip themselves without them.
+
+**Prove the anchor against real Razorpay test mode:**
+
+```bash
+cp .env.example .env          # fill in rzp_test_ keys
+python -m kya.live_check      # places one ₹100 test-mode order
+pytest tests/test_live_razorpay.py -m live -v
+```
+
+`live_check` places one order through the full gateway, fetches it back from
+Razorpay, and re-derives the obligation hash from the receipt alone. It prints
+the order id so the same record can be opened in the Razorpay dashboard and
+checked by hand. Without credentials it runs against the in-memory rail and
+says so, so its output can never be mistaken for a live run.
 
 ## Ethics
 

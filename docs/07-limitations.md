@@ -6,7 +6,7 @@ Written before implementation, and updated with measured results. An unresolved 
 
 **Reserve Pay / SBMD is a local simulation.** NPCI's Single Block Multi Debit is not available to a test-mode developer account, and the Unified Agent Protocol has not launched — it is in development at NPCI and requires RBI approval before it goes live.
 
-So `kya/rails/reserve_pay_sim.py` models block-and-multi-debit semantics against a local ledger: reserve, debit, release, expiry. It is labelled `SIMULATED` in code, in API responses, in the dashboard and in the demo video.
+So `kya/reserve_pay.py` models block-and-multi-debit semantics against a local ledger: reserve, debit, release, expiry. It is labelled `SIMULATED` in code, in API responses, in the dashboard and in the demo video.
 
 What this does and does not prove: the **block guard logic** is real and tested — a debit with no backing obligation is rejected, and cumulative debits cannot exceed the reserve. What is not proven is integration against live NPCI rails. The control is demonstrated; the plumbing is not.
 
