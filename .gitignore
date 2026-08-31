@@ -18,3 +18,4 @@ venv/
 *.sqlite3
 data/
 reports/*.json
+.21st/

@@ -9,6 +9,7 @@ from dataclasses import asdict
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -115,6 +116,12 @@ def create_app(state: KYAAppState | None = None) -> FastAPI:
         title="Know-Your-Agent",
         version="0.1.0",
         description="Obligation-clearing gateway for agentic commerce on Razorpay rails.",
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:5173"],
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
     app.state.kya = state or KYAAppState.demo()
     app.mount("/static", StaticFiles(directory=str(_ROOT / "static")), name="static")
@@ -223,6 +230,10 @@ def create_app(state: KYAAppState | None = None) -> FastAPI:
     @api.get("/metrics")
     def metrics(state: StateDep) -> dict[str, Any]:
         return _dashboard_metrics(state)
+
+    @api.get("/benchmark")
+    def benchmark(state: StateDep) -> dict[str, Any]:
+        return state.benchmark()
 
     app.include_router(api)
 

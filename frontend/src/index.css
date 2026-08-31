@@ -1,0 +1,52 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --color-ink: #14171c;
+  --color-ink-soft: #565f6d;
+  --color-ink-faint: #88919c;
+  --color-paper: #ffffff;
+  --color-canvas: #eceef1;
+  --color-line: #d9dee5;
+  --color-line-soft: #e8ebef;
+
+  --color-chrome: #14171c;
+  --color-chrome-line: #2c313b;
+  --color-chrome-text: #c7cdd6;
+  --color-chrome-dim: #838d9a;
+
+  --color-signal: #4a3aa8;
+  --color-signal-bg: #edeafa;
+
+  --color-allow: #1b6b45;
+  --color-allow-bg: #dcefe3;
+  --color-step-up: #31478f;
+  --color-step-up-bg: #e4e8fa;
+  --color-quarantine: #8a5a0f;
+  --color-quarantine-bg: #f6ead2;
+  --color-deny: #9b3226;
+  --color-deny-bg: #f8e2df;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-signal-bg);
+  color: var(--color-signal);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
