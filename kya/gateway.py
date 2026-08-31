@@ -43,8 +43,10 @@ to make.
 from __future__ import annotations
 
 import uuid
+from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from threading import RLock
 from typing import Any, Callable, Mapping
 
 from kya.canonical import now_utc
@@ -103,6 +105,7 @@ class Gateway:
         delivery_days: int = 5,
         return_window_days: int = 7,
         cancellation_terms: str = "Cancellable until dispatch.",
+        max_results: int = 10_000,
     ) -> None:
         self.pipeline = pipeline
         self.ledger = ledger
@@ -113,7 +116,9 @@ class Gateway:
         self.delivery_days = delivery_days
         self.return_window_days = return_window_days
         self.cancellation_terms = cancellation_terms
-        self._results: dict[str, GatewayResult] = {}
+        self._max_results = max_results
+        self._lock = RLock()
+        self._results: OrderedDict[str, GatewayResult] = OrderedDict()
 
     # --- purchases -----------------------------------------------------------
 
@@ -125,17 +130,19 @@ class Gateway:
         ctx = self.context_factory(request)
         envelope = self.pipeline.evaluate(ctx)
 
-        cached = self._results.get(envelope.decision_id)
-        if cached is not None:
-            replay = GatewayResult(
-                envelope=envelope,
-                obligation=cached.obligation,
-                order=cached.order,
-                anchor=cached.anchor,
-                rail_error=cached.rail_error,
-                replayed=True,
-            )
-            return replay
+        with self._lock:
+            cached = self._results.get(envelope.decision_id)
+            if cached is not None:
+                self._results.move_to_end(envelope.decision_id)
+                replay = GatewayResult(
+                    envelope=envelope,
+                    obligation=cached.obligation,
+                    order=cached.order,
+                    anchor=cached.anchor,
+                    rail_error=cached.rail_error,
+                    replayed=True,
+                )
+                return replay
 
         if envelope.decision is not Decision.ALLOW or request.cart is None:
             return self._remember(GatewayResult(envelope=envelope))
@@ -158,45 +165,56 @@ class Gateway:
                 )
             )
 
-        sealed = self._mint(ctx, request, now=ctx.now)
-        envelope.obligation_id = sealed.obligation_id
+        now = ctx.now
+        obligation = self._mint(ctx, request, now)
+        envelope.obligation_id = obligation.obligation_id
 
+        # Attach custom notes first so our anchor is not overwritten.
         notes = dict(extra_notes or {})
-        notes.update(anchor_notes(sealed))
+        notes.update(anchor_notes(obligation))
 
         try:
             order = self.rail.create_order(
-                amount=sealed.promised.total,
-                receipt=sealed.rail.ref,
+                amount=obligation.promised.total,
+                currency=obligation.promised.currency,
+                receipt=obligation.rail.ref,
                 notes=notes,
-                currency=sealed.promised.currency,
             )
         except RailError as exc:
-            # The obligation stands. It is open, carries the reference the rail
-            # was asked to record, and the reconciler can find it from that.
+            # The obligation is minted and open. The caller gets a structured
+            # error rather than an exception, and the reconciler can find the
+            # obligation later and settle or reverse it.
             return self._remember(
                 GatewayResult(
-                    envelope=envelope, obligation=sealed, rail_error=str(exc)
+                    envelope=envelope,
+                    obligation=obligation,
+                    rail_error=str(exc),
                 )
             )
 
-        self.ledger.bind_rail(sealed.obligation_id, order["id"], now=ctx.now)
+        # The rail assigned its own id. Bind it so subsequent lookups (and the
+        # reconciler) can join local obligations against rail events.
+        rail_id = order.get("id")
+        if rail_id is not None:
+            self.ledger.bind_rail(obligation.obligation_id, rail_id, now=now)
 
-        # Verify our own anchor immediately rather than assuming it round
-        # tripped. Discovering at dispute time that the note never landed is
-        # discovering it far too late.
-        anchor = verify_anchor(sealed, order)
-
+        anchor = verify_anchor(obligation, order)
         return self._remember(
             GatewayResult(
-                envelope=envelope, obligation=sealed, order=order, anchor=anchor
+                envelope=envelope,
+                obligation=obligation,
+                order=order,
+                anchor=anchor,
             )
         )
 
     # --- refunds -------------------------------------------------------------
 
     def submit_refund(
-        self, request: AgentRequest, payment_id: str, amount: int
+        self,
+        request: AgentRequest,
+        payment_id: str,
+        amount: int,
     ) -> GatewayResult:
         """A guarded, agent-initiated refund.
 
@@ -209,11 +227,13 @@ class Gateway:
         ctx = self.context_factory(request)
         envelope = self.pipeline.evaluate(ctx)
 
-        cached = self._results.get(envelope.decision_id)
-        if cached is not None:
-            return GatewayResult(
-                envelope=envelope, refund=cached.refund, replayed=True
-            )
+        with self._lock:
+            cached = self._results.get(envelope.decision_id)
+            if cached is not None:
+                self._results.move_to_end(envelope.decision_id)
+                return GatewayResult(
+                    envelope=envelope, refund=cached.refund, replayed=True
+                )
 
         if envelope.decision is not Decision.ALLOW:
             return self._remember(GatewayResult(envelope=envelope))
@@ -237,16 +257,25 @@ class Gateway:
 
         if obligation is not None:
             envelope.obligation_id = obligation.obligation_id
-            if amount >= obligation.promised.total:
-                self.ledger.amend(
-                    obligation.obligation_id,
-                    state=ObligationState.REVERSED,
-                    now=ctx.now,
-                )
+            new_amount_due = max(0, obligation.amount_due - amount)
+            new_state = (
+                ObligationState.REVERSED
+                if new_amount_due == 0
+                else obligation.state
+            )
+            self.ledger.amend(
+                obligation.obligation_id,
+                amount_due=new_amount_due,
+                state=new_state,
+                now=ctx.now,
+            )
 
         return self._remember(
             GatewayResult(envelope=envelope, obligation=obligation, refund=refund)
         )
+
+    refund = submit_refund
+    submit_order = create_order
 
     # --- internals -----------------------------------------------------------
 
@@ -305,5 +334,8 @@ class Gateway:
             return None
 
     def _remember(self, result: GatewayResult) -> GatewayResult:
-        self._results[result.envelope.decision_id] = result
+        with self._lock:
+            if len(self._results) >= self._max_results:
+                self._results.popitem(last=False)
+            self._results[result.envelope.decision_id] = result
         return result

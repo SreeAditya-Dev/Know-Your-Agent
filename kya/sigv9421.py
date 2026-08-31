@@ -151,7 +151,12 @@ def build_signature_base(request: AgentRequest, parsed: ParsedSignature) -> byte
         elif name == "@path":
             value = request.path
         elif name == "@target-uri":
-            value = f"https://{request.authority}{request.path}"
+            proto = (
+                headers_ci.get("x-forwarded-proto")
+                or headers_ci.get("x-forwarded-scheme")
+                or ("http" if any(h in request.authority for h in ("localhost", "127.0.0.1", ":8000", ":8080", ":3000")) else "https")
+            )
+            value = f"{proto}://{request.authority}{request.path}"
         elif name.startswith("@"):
             raise SignatureParseError(f"unsupported derived component {component!r}")
         else:

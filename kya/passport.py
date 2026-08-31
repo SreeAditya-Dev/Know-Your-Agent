@@ -24,6 +24,7 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from threading import RLock
 from typing import Callable, Protocol
 
 from kya.canonical import now_utc
@@ -180,18 +181,21 @@ class SqlitePassportStore(_StoreMixin):
         clock: Callable[[], datetime] = now_utc,
     ) -> None:
         self._clock_fn = clock
-        self._conn = sqlite3.connect(str(path))
+        self._lock = RLock()
+        self._conn = sqlite3.connect(str(path), check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
-        self._conn.executescript(_SCHEMA)
-        self._conn.commit()
+        with self._lock:
+            self._conn.executescript(_SCHEMA)
+            self._conn.commit()
 
     def _clock(self) -> datetime:
         return self._clock_fn()
 
     def get(self, agent_id: str) -> ClearingPassport:
-        row = self._conn.execute(
-            "SELECT * FROM passports WHERE agent_id = ?", (agent_id,)
-        ).fetchone()
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT * FROM passports WHERE agent_id = ?", (agent_id,)
+            ).fetchone()
         if row is None:
             now = self._clock()
             return ClearingPassport(agent_id=agent_id, first_seen=now, last_seen=now)
@@ -207,37 +211,40 @@ class SqlitePassportStore(_StoreMixin):
         )
 
     def put(self, passport: ClearingPassport) -> ClearingPassport:
-        self._conn.execute(
-            """
-            INSERT INTO passports (agent_id, tier, cleared_count, disputed_count,
-                                   basis_drift_events, total_cleared_value,
-                                   first_seen, last_seen)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(agent_id) DO UPDATE SET
-                tier                = excluded.tier,
-                cleared_count       = excluded.cleared_count,
-                disputed_count      = excluded.disputed_count,
-                basis_drift_events  = excluded.basis_drift_events,
-                total_cleared_value = excluded.total_cleared_value,
-                last_seen           = excluded.last_seen
-            """,
-            (
-                passport.agent_id,
-                passport.tier.value,
-                passport.cleared_count,
-                passport.disputed_count,
-                passport.basis_drift_events,
-                passport.total_cleared_value,
-                passport.first_seen.isoformat(),
-                passport.last_seen.isoformat(),
-            ),
-        )
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute(
+                """
+                INSERT INTO passports (agent_id, tier, cleared_count, disputed_count,
+                                       basis_drift_events, total_cleared_value,
+                                       first_seen, last_seen)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(agent_id) DO UPDATE SET
+                    tier                = excluded.tier,
+                    cleared_count       = excluded.cleared_count,
+                    disputed_count      = excluded.disputed_count,
+                    basis_drift_events  = excluded.basis_drift_events,
+                    total_cleared_value = excluded.total_cleared_value,
+                    last_seen           = excluded.last_seen
+                """,
+                (
+                    passport.agent_id,
+                    passport.tier.value,
+                    passport.cleared_count,
+                    passport.disputed_count,
+                    passport.basis_drift_events,
+                    passport.total_cleared_value,
+                    passport.first_seen.isoformat(),
+                    passport.last_seen.isoformat(),
+                ),
+            )
+            self._conn.commit()
         return passport
 
     def all(self) -> list[ClearingPassport]:
-        rows = self._conn.execute("SELECT agent_id FROM passports ORDER BY agent_id")
-        return [self.get(row["agent_id"]) for row in rows.fetchall()]
+        with self._lock:
+            rows = self._conn.execute("SELECT agent_id FROM passports ORDER BY agent_id").fetchall()
+        return [self.get(row["agent_id"]) for row in rows]
 
     def close(self) -> None:
-        self._conn.close()
+        with self._lock:
+            self._conn.close()

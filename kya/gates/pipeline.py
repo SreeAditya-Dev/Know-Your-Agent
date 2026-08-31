@@ -19,7 +19,9 @@ from __future__ import annotations
 
 import time
 import uuid
+from collections import OrderedDict
 from dataclasses import dataclass, field
+from threading import RLock
 
 from kya.enums import Decision, Gate, GateVerdict
 from kya.limits import LimitStore
@@ -43,19 +45,23 @@ class _CachedDecision:
 
 
 class Pipeline:
-    """Ordered gate runner with decision caching."""
+    """Ordered gate runner with bounded LRU decision caching and thread safety."""
 
-    def __init__(self, gates: list[BaseGate]) -> None:
+    def __init__(self, gates: list[BaseGate], max_cache_size: int = 10_000) -> None:
         self.gates = gates
-        self._decisions: dict[tuple[str, str, str], _CachedDecision] = {}
+        self._max_cache_size = max_cache_size
+        self._lock = RLock()
+        self._decisions: OrderedDict[tuple[str, str, str], _CachedDecision] = OrderedDict()
 
     def evaluate(self, ctx: GateContext) -> DecisionEnvelope:
         key = self._cache_key(ctx)
-        cached = self._decisions.get(key)
-        if cached is not None:
-            replay = cached.envelope.model_copy(deep=True)
-            replay.idempotent_replay = True
-            return replay
+        with self._lock:
+            cached = self._decisions.get(key)
+            if cached is not None:
+                self._decisions.move_to_end(key)
+                replay = cached.envelope.model_copy(deep=True)
+                replay.idempotent_replay = True
+                return replay
 
         started = time.perf_counter()
         results: list[GateResult] = []
@@ -102,7 +108,11 @@ class Pipeline:
             for gate in self.gates:
                 gate.commit(ctx, envelope)
 
-        self._decisions[key] = _CachedDecision(envelope=envelope)
+        with self._lock:
+            if len(self._decisions) >= self._max_cache_size:
+                self._decisions.popitem(last=False)
+            self._decisions[key] = _CachedDecision(envelope=envelope)
+
         return envelope
 
     @staticmethod
@@ -113,7 +123,8 @@ class Pipeline:
         return (ctx.request.agent_id, mandate_hash, ctx.request.idempotency_key)
 
     def clear_cache(self) -> None:
-        self._decisions.clear()
+        with self._lock:
+            self._decisions.clear()
 
 
 def default_pipeline(
