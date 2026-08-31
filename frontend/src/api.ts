@@ -96,6 +96,81 @@ export interface BenchmarkResponse {
   baselines: Record<string, BaselineEntry>
 }
 
+async function post<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return res.json()
+}
+
+export interface StepAssertion {
+  check: string
+  passed: boolean
+  detail: string
+}
+
+export interface SimulationStep {
+  step_id: string
+  name: string
+  description: string
+  verdict: string
+  reason_codes: string[]
+  elapsed_ms: number
+  assertions: StepAssertion[]
+  explanation: string
+  metadata: Record<string, unknown>
+}
+
+export interface SimulationScenario {
+  scenario_id: string
+  title: string
+  category: string
+  threat_class: string | null
+  target_gate: string
+  summary: string
+  expected_decision: string
+  default_tier: string
+  default_amount_inr: number
+}
+
+export interface SimulationResult {
+  scenario_id: string
+  scenario_title: string
+  threat_class: string | null
+  category: string
+  summary: string
+  request_summary: {
+    method: string
+    path: string
+    agent_id: string
+    tier: string
+    cart_total_inr: number
+    items: Array<{ sku: string; name: string; qty: number; price_inr: number }>
+    has_signature: boolean
+    free_text: Record<string, string>
+    callback_url: string | null
+  }
+  raw_request: Record<string, unknown>
+  decision: string
+  reason_codes: string[]
+  explanation: string
+  total_latency_ms: number
+  obligation: {
+    obligation_id: string
+    receipt_hash: string
+    amount_due_inr: number
+    currency: string
+    merchant_id: string
+    rail_type: string
+    ledger_tip: string
+    ledger_entries: number
+  } | null
+  steps: SimulationStep[]
+}
+
 export const api = {
   health: () => get<HealthResponse>('/health'),
   decisions: () => get<DecisionSummary[]>('/decisions'),
@@ -103,4 +178,7 @@ export const api = {
   metrics: () => get<MetricsResponse>('/metrics'),
   benchmark: () => get<BenchmarkResponse>('/benchmark'),
   ledger: () => get<LedgerVerification>('/ledger/verify'),
+  simulationScenarios: () => get<SimulationScenario[]>('/simulation/scenarios'),
+  runSimulation: (params?: { scenario_id?: string; custom_params?: Record<string, unknown> }) =>
+    post<SimulationResult>('/simulation/run', params),
 }

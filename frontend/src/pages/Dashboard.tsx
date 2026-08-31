@@ -34,14 +34,22 @@ export function Dashboard() {
             Agent transaction oversight
           </h1>
         </div>
-        <div
-          className={`rounded-sm px-3 py-1.5 font-mono text-xs font-semibold whitespace-nowrap ${
-            m.operations.ledger_ok
-              ? 'bg-allow-bg text-allow'
-              : 'bg-deny-bg text-deny'
-          }`}
-        >
-          Ledger {m.operations.ledger_ok ? 'intact' : 'needs review'}
+        <div className="flex items-center gap-3 max-md:flex-wrap">
+          <Link
+            to="/dashboard/simulation"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-signal hover:bg-signal/90 text-white rounded text-xs font-semibold no-underline transition-colors cursor-pointer"
+          >
+            Launch Live Simulation →
+          </Link>
+          <div
+            className={`rounded-sm px-3 py-1.5 font-mono text-xs font-semibold whitespace-nowrap ${
+              m.operations.ledger_ok
+                ? 'bg-allow-bg text-allow'
+                : 'bg-deny-bg text-deny'
+            }`}
+          >
+            Ledger {m.operations.ledger_ok ? 'intact' : 'needs review'}
+          </div>
         </div>
       </section>
 

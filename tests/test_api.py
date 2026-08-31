@@ -144,3 +144,35 @@ def test_webhook_route_verifies_and_deduplicates_delivery():
     assert first.status_code == 200
     assert first.json()["accepted"] is True
     assert second.json()["duplicate"] is True
+
+
+def test_simulation_scenarios_and_execution():
+    client = _client()
+
+    scenarios_resp = client.get("/v1/simulation/scenarios")
+    assert scenarios_resp.status_code == 200
+    scenarios = scenarios_resp.json()
+    assert len(scenarios) == 11
+
+    # Run legit purchase
+    legit_run = client.post("/v1/simulation/run", json={"scenario_id": "legit_purchase"})
+    assert legit_run.status_code == 200
+    data = legit_run.json()
+    assert data["decision"] == "ALLOW"
+    assert len(data["steps"]) == 8
+    assert data["obligation"] is not None
+    assert data["obligation"]["obligation_id"].startswith("obl_")
+
+    # Run replay attack
+    replay_run = client.post("/v1/simulation/run", json={"scenario_id": "a3_replay"})
+    assert replay_run.status_code == 200
+    assert replay_run.json()["decision"] == "DENY"
+    assert "R001" in replay_run.json()["reason_codes"]
+
+    # Run custom params
+    custom_run = client.post(
+        "/v1/simulation/run",
+        json={"scenario_id": "legit_purchase", "custom_params": {"tier": "T1", "amount_inr": 8000.0}},
+    )
+    assert custom_run.status_code == 200
+    assert custom_run.json()["decision"] == "STEP_UP"

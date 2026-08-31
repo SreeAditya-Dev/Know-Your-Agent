@@ -3,6 +3,7 @@ import { ExternalLink } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', label: 'Overview', end: true },
+  { to: '/dashboard/simulation', label: 'Live Simulation' },
   { to: '/dashboard/quarantine', label: 'Review queue' },
   { to: '/dashboard/metrics', label: 'Benchmark' },
 ]

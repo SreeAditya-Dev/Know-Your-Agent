@@ -235,6 +235,19 @@ def create_app(state: KYAAppState | None = None) -> FastAPI:
     def benchmark(state: StateDep) -> dict[str, Any]:
         return state.benchmark()
 
+    @api.get("/simulation/scenarios")
+    def get_simulation_scenarios() -> list[dict[str, Any]]:
+        from kya.simulation_runner import list_scenarios
+        return list_scenarios()
+
+    @api.post("/simulation/run")
+    def run_simulation(payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        from kya.simulation_runner import execute_simulation
+        body = payload or {}
+        scenario_id = body.get("scenario_id", "legit_purchase")
+        custom_params = body.get("custom_params")
+        return execute_simulation(scenario_id, custom_params=custom_params)
+
     app.include_router(api)
 
     @app.get("/", include_in_schema=False)
