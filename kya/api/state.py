@@ -85,6 +85,7 @@ class KYAAppState:
     clearing_results: dict[str, ClearingResult] = field(default_factory=dict)
     dispute_packages: dict[str, DisputeRepresentmentPackage] = field(default_factory=dict)
     settlement_certificates: dict[str, SettlementCertificate] = field(default_factory=dict)
+    store_orders: list[dict[str, Any]] = field(default_factory=list)
 
     gateway: Gateway = field(init=False)
     clearing: ClearingService = field(init=False)
@@ -196,6 +197,7 @@ class KYAAppState:
         self._seed_block_drain_denial()
         self._seed_obligation_mismatch_clearing()
         self._seed_disputes_and_reputation()
+        self._seed_store_orders()
 
     # -- inline pipeline scenarios --------------------------------------------
     #
@@ -543,4 +545,28 @@ class KYAAppState:
             key=lambda pkg: pkg.created_at,
             reverse=True,
         )
+
+    def _seed_store_orders(self) -> None:
+        self.store_orders.append({
+            "order_id": "ord_apex_seed01",
+            "item_sku": "PUMA-NITRO-3",
+            "item_name": "Puma Velocity Nitro 3 Running Shoes",
+            "size": 10,
+            "quantity": 1,
+            "amount_inr": 7499.00,
+            "status": "PLACED",
+            "buyer_source": "AI_AGENT",
+            "buyer_prompt": "Buy me Puma Velocity Nitro 3 running shoes in size 10 under ₹8000 budget",
+            "razorpay_order_id": "order_test_kya_001",
+            "obligation_id": "ob_seed_nitro_001",
+            "decision": "ALLOW",
+            "reason_codes": [],
+            "created_at": now_utc().isoformat(),
+            "kya_verified": True,
+            "image_url": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80",
+        })
+
+    def ordered_store_orders(self) -> list[dict[str, Any]]:
+        return list(self.store_orders)
+
 

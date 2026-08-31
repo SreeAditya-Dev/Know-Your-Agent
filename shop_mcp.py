@@ -1,94 +1,47 @@
 # shop_mcp.py
-"""Shop and KYA Gateway MCP Server for Claude Code and Antigravity.
+"""Shop and KYA Gateway MCP Server for Claude Code, ChatGPT Desktop, and Antigravity.
 
 Provides real-time product discovery, cart creation, mandate verification,
 and simulation scenario execution over Model Context Protocol (MCP).
 """
 
 import json
+import httpx
 from mcp.server.fastmcp import FastMCP
 
+from kya.store_catalog import STORE_PRODUCTS, get_catalog, find_product_by_sku, search_products
 from kya.simulation_runner import SCENARIOS_CATALOG, execute_simulation
 from kya.simulation import standard_sandbox, make_cart, make_mandates, build_signed_request
 
 mcp = FastMCP("ShopPayAgent")
 
-# Real-time shoe catalog
-CATALOG = [
-    {
-        "sku": "PUMA-NITRO-3",
-        "name": "Puma Velocity Nitro 3 Running Shoes",
-        "brand": "Puma",
-        "category": "Running",
-        "price_paise": 749900,  # Rs 7,499.00
-        "price_inr": 7499.00,
-        "in_stock": True,
-    },
-    {
-        "sku": "PUMA-FLYER-RUNNER",
-        "name": "Puma Flyer Runner Mesh Shoes",
-        "brand": "Puma",
-        "category": "Casual/Running",
-        "price_paise": 319900,  # Rs 3,199.00
-        "price_inr": 3199.00,
-        "in_stock": True,
-    },
-    {
-        "sku": "PUMA-DEVIATE-NITRO-2",
-        "name": "Puma Deviate Nitro 2 Carbon Plated Shoes",
-        "brand": "Puma",
-        "category": "Marathon",
-        "price_paise": 1299900,  # Rs 12,999.00
-        "price_inr": 12999.00,
-        "in_stock": True,
-    },
-    {
-        "sku": "PUMA-RED-BULL-RACING",
-        "name": "Puma Red Bull Racing Drift Cat Decima",
-        "brand": "Puma",
-        "category": "Motorsport",
-        "price_paise": 599900,  # Rs 5,999.00
-        "price_inr": 5999.00,
-        "in_stock": True,
-    },
-]
+API_BASE_URL = "http://127.0.0.1:8331/v1"
 
 
 @mcp.tool()
-def search_catalog(query: str = "", max_price_inr: float = 20000.0):
-    """Search the store catalog for items matching a keyword and budget ceiling."""
-    max_price_paise = int(max_price_inr * 100)
-    q = (query or "").lower().strip()
-    matches = []
-    for item in CATALOG:
-        name_match = (
-            not q
-            or q in item["name"].lower()
-            or q in item["brand"].lower()
-            or q in item["category"].lower()
-            or q in item["sku"].lower()
-        )
-        if name_match and item["price_paise"] <= max_price_paise:
-            matches.append(item)
-    return matches
+def search_catalog(query: str = "", max_price_inr: float = 50000.0):
+    """Search the Apex Kicks store catalog for shoes matching a keyword, size, and budget ceiling."""
+    products = search_products(query=query, max_price_inr=max_price_inr)
+    return [p.to_dict() for p in products]
 
 
 @mcp.tool()
-def create_cart(sku: str, quantity: int = 1):
-    """Create a locked checkout cart with calculated totals and line items."""
-    item = next((p for p in CATALOG if p["sku"].upper() == sku.upper()), None)
+def create_cart(sku: str, quantity: int = 1, size: int = 9):
+    """Create a locked checkout cart with calculated totals, selected size, and line items."""
+    item = find_product_by_sku(sku)
     if not item:
         return {"error": f"Product with SKU '{sku}' not found in catalog."}
 
-    total_paise = item["price_paise"] * quantity
-    cart_id = f"cart_{item['sku'].lower()}_{int(total_paise)}"
+    total_paise = item.price_paise * quantity
+    cart_id = f"cart_{item.sku.lower()}_{int(total_paise)}"
 
     return {
         "cart_id": cart_id,
-        "sku": item["sku"],
-        "name": item["name"],
+        "sku": item.sku,
+        "name": item.name,
+        "size": size,
         "quantity": quantity,
-        "unit_price_inr": item["price_inr"],
+        "unit_price_inr": item.price_inr,
         "total_paise": total_paise,
         "total_inr": total_paise / 100.0,
         "currency": "INR",
@@ -97,26 +50,59 @@ def create_cart(sku: str, quantity: int = 1):
 
 
 @mcp.tool()
-def execute_order(sku: str, max_budget_inr: float = 10000.0, quantity: int = 1):
-    """Execute a purchase through the KYA security gateway and Razorpay rails."""
-    item = next((p for p in CATALOG if p["sku"].upper() == sku.upper()), None)
+def execute_order(sku: str, max_budget_inr: float = 15000.0, quantity: int = 1, size: int = 9):
+    """Execute a purchase through the KYA security gateway and Razorpay rails for Claude Code / ChatGPT."""
+    item = find_product_by_sku(sku)
     if not item:
         return {"decision": "DENY", "error": f"SKU '{sku}' not found."}
 
-    total_paise = item["price_paise"] * quantity
+    total_paise = item.price_paise * quantity
     budget_paise = int(max_budget_inr * 100)
+
+    # 1. Try forwarding to live running KYA server so it updates web UI in real-time
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            resp = client.post(
+                f"{API_BASE_URL}/store/agent-checkout",
+                json={
+                    "prompt": f"Claude/ChatGPT MCP Buyer: Order {quantity}x {item.name} (SKU: {item.sku}, Size: {size}) under max budget ₹{max_budget_inr:,.2f}",
+                    "custom_params": {
+                        "sku": item.sku,
+                        "size": size,
+                        "quantity": quantity,
+                        "max_budget_inr": max_budget_inr,
+                    },
+                    "buyer_source": "CLAUDE_CODE_MCP",
+                },
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return {
+                    "decision": data.get("decision"),
+                    "allowed": data.get("success"),
+                    "reason_codes": data.get("reason_codes"),
+                    "explanation": data.get("explanation"),
+                    "obligation_id": data.get("obligation_id"),
+                    "amount_inr": total_paise / 100.0,
+                    "order": data.get("order"),
+                    "razorpay_order_id": data.get("razorpay_order_id"),
+                    "live_web_synced": True,
+                }
+    except Exception:
+        # Fallback to direct in-process execution if server is offline
+        pass
 
     if total_paise > budget_paise:
         return {
             "decision": "DENY",
             "reason_codes": ["E003"],
-            "explanation": f"Cart total Rs {total_paise / 100:.2f} exceeds user budget of Rs {max_budget_inr:.2f}.",
-            "gate": "G3_MANDATE_CEILING",
+            "explanation": f"Cart total ₹{total_paise / 100:.2f} exceeds user budget of ₹{max_budget_inr:.2f}.",
+            "gate": "G4_MANDATE_CEILING",
             "allowed": False,
         }
 
     sandbox, agent, principal = standard_sandbox()
-    cart = make_cart(items=[(item["sku"], item["name"], quantity, item["price_paise"])])
+    cart = make_cart(items=[(item.sku, f"{item.name} (Size {size})", quantity, item.price_paise)])
     mandates = make_mandates(agent, principal, cart, max_amount=budget_paise)
     request = build_signed_request(
         agent=agent,
@@ -136,13 +122,15 @@ def execute_order(sku: str, max_budget_inr: float = 10000.0, quantity: int = 1):
         "obligation_id": res.envelope.obligation_id,
         "amount_inr": total_paise / 100.0,
         "order": {
-            "item": item["name"],
-            "sku": item["sku"],
+            "item": item.name,
+            "sku": item.sku,
+            "size": size,
             "currency": "INR",
-            "receipt": "rcpt_" + item["sku"].lower(),
+            "receipt": "rcpt_" + item.sku.lower(),
             "kya_verified": res.allowed,
             "razorpay_order_id": res.order.get("id") if res.order else None,
         },
+        "live_web_synced": False,
     }
 
 

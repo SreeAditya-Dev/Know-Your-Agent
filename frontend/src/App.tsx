@@ -6,12 +6,15 @@ import { MetricsPage } from './pages/Metrics'
 import { DecisionPage } from './pages/Decision'
 import { SimulationPage } from './pages/Simulation'
 import { DisputesPage } from './pages/Disputes'
+import { StorePage } from './pages/Store'
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Navigate to="/store" replace />} />
+        <Route path="/store" element={<StorePage />} />
+        <Route path="/dashboard/store" element={<StorePage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard/simulation" element={<SimulationPage />} />
         <Route path="/dashboard/disputes" element={<DisputesPage />} />
@@ -22,4 +25,3 @@ export default function App() {
     </Routes>
   )
 }
-

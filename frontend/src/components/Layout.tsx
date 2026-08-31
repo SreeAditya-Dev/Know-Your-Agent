@@ -1,7 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Flame } from 'lucide-react'
 
 const navItems = [
+  { to: '/store', label: '👟 Apex Storefront (Live E-Comm)' },
   { to: '/dashboard', label: 'Overview', end: true },
   { to: '/dashboard/simulation', label: 'Live Simulation' },
   { to: '/dashboard/disputes', label: 'Disputes & Liability' },
@@ -14,10 +15,14 @@ export function Layout() {
     <>
       <header className="min-h-14 flex items-center gap-7 px-7 bg-chrome border-b border-chrome-line text-paper max-md:flex-wrap max-md:gap-3.5 max-md:px-4 max-md:py-3">
         <NavLink
-          to="/dashboard"
-          className="flex items-baseline gap-1.5 font-mono text-[15px] font-semibold tracking-wide no-underline whitespace-nowrap text-paper"
+          to="/store"
+          className="flex items-center gap-2 font-mono text-[15px] font-semibold tracking-wide no-underline whitespace-nowrap text-paper"
         >
-          KYA<span className="text-[#a89af0] font-medium">/control</span>
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <Flame size={14} className="text-white" />
+          </div>
+          <span>KYA</span>
+          <span className="text-[#a89af0] font-medium">/gateway</span>
         </NavLink>
 
         <nav className="flex gap-5.5 items-center flex-1 max-md:order-3 max-md:basis-full max-md:overflow-x-auto max-md:pb-0.5" aria-label="Primary navigation">
@@ -29,7 +34,7 @@ export function Layout() {
               className={({ isActive }) =>
                 `text-[13px] font-medium no-underline py-1 border-b transition-colors duration-150 cursor-pointer ${
                   isActive
-                    ? 'text-paper border-signal'
+                    ? 'text-paper border-signal font-semibold'
                     : 'text-chrome-text border-transparent hover:text-paper'
                 }`
               }
@@ -48,8 +53,14 @@ export function Layout() {
           </a>
         </nav>
 
-        <div className="border border-chrome-line rounded-sm px-2.5 py-1 text-chrome-dim font-mono text-[11px] font-medium tracking-widest uppercase whitespace-nowrap max-md:ml-auto">
-          Sandbox mode
+        <div className="flex items-center gap-2 max-md:ml-auto">
+          <div className="border border-emerald-800/60 bg-emerald-950/40 rounded-sm px-2.5 py-1 text-emerald-300 font-mono text-[11px] font-medium tracking-widest uppercase whitespace-nowrap flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Razorpay Test Rails
+          </div>
+          <div className="border border-chrome-line rounded-sm px-2.5 py-1 text-chrome-dim font-mono text-[11px] font-medium tracking-widest uppercase whitespace-nowrap">
+            Sandbox mode
+          </div>
         </div>
       </header>
 

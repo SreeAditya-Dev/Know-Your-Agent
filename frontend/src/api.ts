@@ -271,6 +271,68 @@ export interface AgentReputationResponse {
   calculated_at: string
 }
 
+export interface StoreProduct {
+  sku: string
+  name: string
+  brand: string
+  category: string
+  price_paise: number
+  price_inr: number
+  original_price_inr: number
+  image_url: string
+  rating: number
+  reviews_count: number
+  in_stock: boolean
+  stock_count: number
+  sizes: number[]
+  colors: string[]
+  specs: string[]
+  description: string
+  merchant_id: string
+  mcc: string
+}
+
+export interface StoreOrder {
+  order_id: string
+  item_sku: string
+  item_name: string
+  size: number
+  quantity: number
+  amount_inr: number
+  status: string
+  buyer_source: string
+  buyer_prompt: string
+  razorpay_order_id: string | null
+  obligation_id: string | null
+  decision: string
+  reason_codes: string[]
+  created_at: string
+  kya_verified: boolean
+  image_url?: string
+}
+
+export interface AgentExecutionStep {
+  step_id: string
+  name: string
+  verdict: string
+  elapsed_ms: number
+  detail: Record<string, unknown>
+  explanation: string
+}
+
+export interface AgentCheckoutResponse {
+  success: boolean
+  decision: string
+  reason_codes: string[]
+  explanation: string
+  total_latency_ms: number
+  order: StoreOrder | null
+  steps: AgentExecutionStep[]
+  obligation_id: string | null
+  razorpay_order_id: string | null
+  envelope: DecisionEnvelope
+}
+
 export const api = {
   health: () => get<HealthResponse>('/health'),
   decisions: () => get<DecisionSummary[]>('/decisions'),
@@ -291,4 +353,11 @@ export const api = {
       '/cross-rail/normalize',
       payload
     ),
+  storeProducts: () => get<StoreProduct[]>('/store/products'),
+  storeOrders: () => get<StoreOrder[]>('/store/orders'),
+  storeParsePrompt: (prompt: string) => post<Record<string, unknown>>('/store/parse-prompt', { prompt }),
+  storeAgentCheckout: (payload: { prompt: string; custom_params?: Record<string, unknown>; buyer_source?: string }) =>
+    post<AgentCheckoutResponse>('/store/agent-checkout', payload),
+  storeDirectCheckout: (payload: { sku: string; size: number; quantity: number; rail?: string }) =>
+    post<AgentCheckoutResponse>('/store/direct-checkout', payload),
 }

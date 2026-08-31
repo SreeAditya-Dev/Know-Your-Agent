@@ -354,6 +354,51 @@ def create_app(state: KYAAppState | None = None) -> FastAPI:
             "rail_normalized": True,
         }
 
+    # --- Store & Agentic Commerce Frontend Routes ---
+
+    @api.get("/store/products")
+    def get_store_products() -> list[dict[str, Any]]:
+        from kya.store_catalog import get_catalog
+        return get_catalog()
+
+    @api.get("/store/orders")
+    def list_store_orders(state: StateDep) -> list[dict[str, Any]]:
+        return state.ordered_store_orders()
+
+    @api.post("/store/parse-prompt")
+    def parse_store_prompt(payload: dict[str, Any]) -> dict[str, Any]:
+        from kya.store_agent import parse_buyer_prompt
+        prompt = payload.get("prompt", "")
+        return parse_buyer_prompt(prompt)
+
+    @api.post("/store/agent-checkout")
+    def store_agent_checkout(payload: dict[str, Any], state: StateDep) -> dict[str, Any]:
+        from kya.store_agent import execute_agent_checkout
+        prompt = payload.get("prompt", "Buy Puma Velocity Nitro 3")
+        custom_params = payload.get("custom_params")
+        buyer_source = payload.get("buyer_source", "AI_AGENT")
+        return execute_agent_checkout(
+            prompt=prompt,
+            state=state,
+            custom_params=custom_params,
+            buyer_source=buyer_source,
+        )
+
+    @api.post("/store/direct-checkout")
+    def store_direct_checkout(payload: dict[str, Any], state: StateDep) -> dict[str, Any]:
+        from kya.store_agent import execute_agent_checkout
+        sku = payload.get("sku", "PUMA-NITRO-3")
+        size = payload.get("size", 9)
+        quantity = payload.get("quantity", 1)
+        rail = payload.get("rail", "RAZORPAY_TEST")
+        prompt = f"Direct Customer Checkout: Purchase SKU {sku} (Size {size}, Qty {quantity}) via {rail}"
+        return execute_agent_checkout(
+            prompt=prompt,
+            state=state,
+            custom_params={"sku": sku, "size": size, "quantity": quantity},
+            buyer_source="HUMAN_CHECKOUT",
+        )
+
     app.include_router(api)
 
     @app.get("/", include_in_schema=False)
