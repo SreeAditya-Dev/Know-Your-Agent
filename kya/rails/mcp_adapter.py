@@ -34,6 +34,13 @@ from typing import Any
 
 from kya.api.state import KYAAppState
 from kya.schemas import AgentRequest
+from kya.simulation import (
+    AgentIdentity,
+    Principal,
+    build_signed_request,
+    make_cart,
+    make_mandates,
+)
 
 try:
     from mcp.server.fastmcp import FastMCP
@@ -106,6 +113,47 @@ def agent_purchase(request: AgentRequest) -> dict[str, Any]:
     """
     state = _get_state()
     result = state.create_order(request)
+    return {
+        "decision": _model(result.envelope),
+        "obligation": _model(result.obligation),
+        "order": result.order,
+        "rail_error": result.rail_error,
+        "replayed": result.replayed,
+    }
+
+
+@mcp.tool()
+def execute_shopper_checkout(
+    item_name: str = "Puma RS-X Running Shoes",
+    sku: str = "SKU-PUMA-RSX-01",
+    amount_inr: float = 4999.0,
+    max_budget_inr: float = 10000.0,
+    agent_id: str = "agent_shopper",
+    principal_id: str = "user_alice",
+    shipping_notes: str | None = None,
+) -> dict[str, Any]:
+    """Autonomous shopping tool for AI buyer agents (Claude Desktop, Codex, Antigravity, etc.).
+
+    Accepts natural-language shopping parameters, automatically builds an AP2-compliant
+    mandate delegation chain, signs the request with the buyer agent's registered Ed25519
+    key, and submits it to KYA's guarded 7-gate control plane and Razorpay test-mode rail.
+
+    Example prompt handled: "Buy me Puma shoes under 10000 rs".
+    """
+    state = _get_state()
+    agent = state.sandbox.register_agent(AgentIdentity.create(agent_id))
+    principal = state.sandbox.register_principal(Principal.create(principal_id))
+
+    amt_paise = int(round(amount_inr * 100))
+    budget_paise = int(round(max_budget_inr * 100))
+
+    cart = make_cart(items=[(sku, item_name, 1, amt_paise)])
+    mandates = make_mandates(agent, principal, cart, max_amount=budget_paise)
+    free_text = {"shipping_notes": shipping_notes} if shipping_notes else {}
+
+    request = build_signed_request(agent, mandates, cart, free_text=free_text)
+    result = state.create_order(request)
+
     return {
         "decision": _model(result.envelope),
         "obligation": _model(result.obligation),
