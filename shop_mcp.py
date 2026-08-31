@@ -147,6 +147,30 @@ def execute_order(sku: str, max_budget_inr: float = 10000.0, quantity: int = 1):
 
 
 @mcp.tool()
+def debit_reserve_pay_block(block_id: str = "blk_sim_reserve_001", amount_inr: float = 10000.0):
+    """Debit funds from an NPCI UPI Reserve Pay (Single Block Multi Debit) block through the KYA gateway."""
+    result = execute_simulation("a10_reserve_drain", custom_params={"amount_inr": amount_inr})
+    return {
+        "block_id": block_id,
+        "amount_inr": amount_inr,
+        "decision": result["decision"],
+        "reason_codes": result["reason_codes"],
+        "explanation": result["explanation"],
+        "total_latency_ms": result["total_latency_ms"],
+        "gate_steps": [
+            {
+                "step_id": step["step_id"],
+                "name": step["name"],
+                "verdict": step["verdict"],
+                "reason_codes": step["reason_codes"],
+                "explanation": step.get("explanation", ""),
+            }
+            for step in result.get("steps", [])
+        ],
+    }
+
+
+@mcp.tool()
 def list_simulation_scenarios():
     """List all available threat and legitimate simulation scenarios in the test corpus."""
     return [
