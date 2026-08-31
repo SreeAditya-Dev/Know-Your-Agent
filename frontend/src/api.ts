@@ -171,6 +171,106 @@ export interface SimulationResult {
   steps: SimulationStep[]
 }
 
+export interface DisputeSummary {
+  package_id: string
+  dispute_id: string
+  obligation_id: string
+  created_at: string
+  executive_summary: string
+  assigned_fault: string
+  outcome: string
+  confidence: number
+  reason_codes: string[]
+  has_certificate: boolean
+  has_consent: boolean
+}
+
+export interface DisputePackageDetail {
+  package_id: string
+  dispute_id: string
+  obligation_id: string
+  created_at: string
+  executive_summary: string
+  liability_verdict: {
+    verdict_id: string
+    assigned_fault: string
+    fault_allocation: Record<string, number>
+    outcome: string
+    confidence: number
+    reason_codes: string[]
+    explanation: string
+    compelling_evidence_summary: string
+  }
+  settlement_certificate: {
+    certificate_id: string
+    obligation_id: string
+    version: number
+    merchant_id: string
+    agent_id: string
+    principal_ref: string
+    rail: { type: string; ref: string; simulated: boolean }
+    clearing_decision_hash: string
+    aggregate_basis: string
+    performance_verdict: string
+    finality: string
+    evidence_item_hashes: string[]
+    issued_at: string
+    certificate_hash: string
+    merchant_signature: string
+  } | null
+  consent_record: {
+    consent_id: string
+    principal_ref: string
+    agent_id: string
+    intent_id: string
+    intent_hash: string
+    cart_id: string
+    cart_hash: string
+    mandate_chain_hash: string
+    constraints: {
+      max_amount: number
+      allowed_merchants: string[]
+      allowed_categories: string[] | null
+    }
+    delegation_signature: string
+    issued_at: string
+    expires_at: string
+    anchored_rail_ref: string | null
+    consent_hash: string
+  } | null
+  obligation_receipt: {
+    obligation_id: string
+    merchant_id: string
+    agent_id: string
+    principal_ref: string
+    promised: {
+      line_items: Array<{ sku: string; name: string; qty: number; unit_price: number }>
+      total: number
+      currency: string
+    }
+    admissibility_floor: string
+    mandate_chain_hash: string
+    rail: { type: string; ref: string; simulated: boolean }
+    self_hash: string
+  }
+  razorpay_anchor_proof: Record<string, unknown>
+  audit_trail_hash_chain: Array<{ step: string; entity_id: string; hash: string; timestamp: string }>
+  representment_brief_markdown: string
+}
+
+export interface AgentReputationResponse {
+  agent_id: string
+  credit_score: number
+  risk_band: string
+  network_cleared_volume: number
+  cross_merchant_cleared_count: number
+  cross_merchant_dispute_rate: number
+  distinct_merchants_count: number
+  reputation_tier: string
+  attestations_count: number
+  calculated_at: string
+}
+
 export const api = {
   health: () => get<HealthResponse>('/health'),
   decisions: () => get<DecisionSummary[]>('/decisions'),
@@ -181,4 +281,14 @@ export const api = {
   simulationScenarios: () => get<SimulationScenario[]>('/simulation/scenarios'),
   runSimulation: (params?: { scenario_id?: string; custom_params?: Record<string, unknown> }) =>
     post<SimulationResult>('/simulation/run', params),
+  disputes: () => get<DisputeSummary[]>('/disputes'),
+  dispute: (id: string) => get<DisputePackageDetail>(`/disputes/${id}`),
+  evaluateDispute: (claim: Record<string, unknown>) =>
+    post<DisputePackageDetail>('/disputes/evaluate', claim),
+  reputation: (agentId: string) => get<AgentReputationResponse>(`/reputation/${agentId}`),
+  normalizeCrossRail: (payload: Record<string, unknown>) =>
+    post<{ token: Record<string, unknown>; is_valid: boolean; rail_normalized: boolean }>(
+      '/cross-rail/normalize',
+      payload
+    ),
 }

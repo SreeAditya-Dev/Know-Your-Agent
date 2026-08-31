@@ -235,6 +235,56 @@ A002 = _r(
     Decision.STEP_UP,
 )
 
+# --- Liability Arbitration & Dispute Representment ---------------------------
+
+L001 = _r(
+    "L001", Gate.G6, "consent_chain_verified", Severity.INFO,
+    "The consent ledger confirms the human principal cryptographically signed the "
+    "intent mandate and the cart mandate strictly adhered to all constraints.",
+    Decision.ALLOW,
+)
+L002 = _r(
+    "L002", Gate.G6, "intent_constraint_breached", Severity.CRITICAL,
+    "The agent breached one or more buyer intent constraints (amount, merchant, "
+    "category, or temporal validity window).",
+    Decision.DENY,
+)
+L003 = _r(
+    "L003", Gate.G6, "delivery_admissible_verified", Severity.INFO,
+    "Fulfilment evidence satisfies all acceptance criteria at or above the "
+    "declared admissibility floor (REC/ATT/PROOF).",
+    Decision.ALLOW,
+)
+L004 = _r(
+    "L004", Gate.G6, "merchant_fulfilment_failed", Severity.CRITICAL,
+    "The merchant failed to prove delivery of promised line items or breached the "
+    "committed delivery window without valid extension.",
+    Decision.DENY,
+)
+L005 = _r(
+    "L005", Gate.G6, "friendly_fraud_detected", Severity.HIGH,
+    "Buyer principal fully authorized transaction and merchant delivered compliant "
+    "obligation; chargeback claim is unfounded friendly fraud.",
+    Decision.ALLOW,
+)
+L006 = _r(
+    "L006", Gate.G6, "agent_rogue_execution", Severity.CRITICAL,
+    "The autonomous buyer agent executed an action unprompted or with tampered "
+    "parameters without user delegation.",
+    Decision.DENY,
+)
+L007 = _r(
+    "L007", Gate.G6, "evidence_package_generated", Severity.INFO,
+    "Tamper-evident dispute representment package successfully synthesized and "
+    "anchored against the payment rail.",
+    Decision.ALLOW,
+)
+L008 = _r(
+    "L008", Gate.G6, "split_liability_assigned", Severity.MEDIUM,
+    "Contributory fault detected across multiple transaction parties.",
+    Decision.STEP_UP,
+)
+
 
 #: Every reason, keyed by code. Iteration order is definition order.
 REGISTRY: dict[str, Reason] = {
@@ -247,6 +297,7 @@ REGISTRY: dict[str, Reason] = {
         E001, E002, E003, E004, E005, E006,
         T001, T002,
         A001, A002,
+        L001, L002, L003, L004, L005, L006, L007, L008,
     )
 }
 

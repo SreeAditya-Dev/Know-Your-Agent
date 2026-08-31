@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from kya.api.state import KYAAppState, StoredDecision
 from kya.enums import Decision
 from kya.rails.webhooks import WebhookRejected
-from kya.schemas import AgentRequest, EvidenceEnvelope
+from kya.schemas import AgentRequest, DisputeClaim, EvidenceEnvelope
 
 
 _ROOT = Path(__file__).resolve().parent
@@ -247,6 +247,112 @@ def create_app(state: KYAAppState | None = None) -> FastAPI:
         scenario_id = body.get("scenario_id", "legit_purchase")
         custom_params = body.get("custom_params")
         return execute_simulation(scenario_id, custom_params=custom_params)
+
+    # --- Disputes & Liability Arbiter routes ---
+
+    @api.get("/disputes")
+    def list_disputes(state: StateDep) -> list[dict[str, Any]]:
+        packages = state.ordered_dispute_packages()
+        return [
+            {
+                "package_id": pkg.package_id,
+                "dispute_id": pkg.dispute_id,
+                "obligation_id": pkg.obligation_id,
+                "created_at": pkg.created_at,
+                "executive_summary": pkg.executive_summary,
+                "assigned_fault": pkg.liability_verdict.assigned_fault.value,
+                "outcome": pkg.liability_verdict.outcome.value,
+                "confidence": pkg.liability_verdict.confidence,
+                "reason_codes": pkg.liability_verdict.reason_codes,
+                "has_certificate": pkg.settlement_certificate is not None,
+                "has_consent": pkg.consent_record is not None,
+            }
+            for pkg in packages
+        ]
+
+    @api.get("/disputes/{dispute_id}")
+    def get_dispute(dispute_id: str, state: StateDep) -> dict[str, Any]:
+        pkg = state.dispute_packages.get(dispute_id)
+        if pkg is None:
+            raise HTTPException(status_code=404, detail="unknown dispute")
+        return _json_model(pkg) or {}
+
+    @api.post("/disputes/evaluate")
+    def evaluate_dispute(claim: DisputeClaim, state: StateDep) -> dict[str, Any]:
+        try:
+            pkg = state.evaluate_dispute(claim)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return _json_model(pkg) or {}
+
+    @api.get("/certificates/{obligation_id}")
+    def get_certificate(obligation_id: str, state: StateDep) -> dict[str, Any]:
+        cert = state.get_settlement_certificate(obligation_id)
+        if cert is None:
+            raise HTTPException(status_code=404, detail="no settlement certificate for obligation")
+        return _json_model(cert) or {}
+
+    @api.get("/consent/{chain_hash}")
+    def get_consent_record(chain_hash: str, state: StateDep) -> dict[str, Any]:
+        record = state.consent_ledger.get_by_chain_hash(chain_hash)
+        if record is None:
+            record = state.consent_ledger.get_by_id(chain_hash)
+        if record is None:
+            raise HTTPException(status_code=404, detail="consent record not found")
+        valid, reasons = state.consent_ledger.verify_consent(record)
+        return {
+            "record": _json_model(record),
+            "is_valid": valid,
+            "verification_reasons": reasons,
+        }
+
+    @api.get("/reputation/{agent_id}")
+    def get_reputation(agent_id: str, state: StateDep) -> dict[str, Any]:
+        score = state.get_agent_reputation(agent_id)
+        return _json_model(score) or {}
+
+    @api.post("/cross-rail/normalize")
+    def normalize_cross_rail(payload: dict[str, Any], state: StateDep) -> dict[str, Any]:
+        token_type = payload.get("token_type", "stripe_spt")
+        token_id = payload.get("token_id", "tok_demo")
+        agent_id = payload.get("agent_id", "agent_cross_rail")
+        principal_ref = payload.get("principal_ref", "user_cross_rail")
+        amount = int(payload.get("amount", 5000_00))
+        currency = payload.get("currency", "INR")
+
+        if token_type == "stripe_spt":
+            token = state.cross_rail_adapter.parse_stripe_spt(
+                token_id=token_id,
+                agent_id=agent_id,
+                principal_ref=principal_ref,
+                amount=amount,
+                currency=currency,
+            )
+        elif token_type == "mc_agentic_token":
+            token = state.cross_rail_adapter.parse_mc_agentic_token(
+                token_id=token_id,
+                agent_id=agent_id,
+                principal_ref=principal_ref,
+                amount=amount,
+                currency=currency,
+            )
+        elif token_type == "x402_usdc":
+            token = state.cross_rail_adapter.parse_x402_header(
+                auth_header=payload.get("auth_header", f"x402 {token_id}"),
+                agent_id=agent_id,
+                principal_ref=principal_ref,
+                amount=amount,
+                currency=currency,
+            )
+        else:
+            raise HTTPException(status_code=400, detail=f"unsupported token type: {token_type}")
+
+        is_valid = state.cross_rail_adapter.verify_token(token)
+        return {
+            "token": _json_model(token),
+            "is_valid": is_valid,
+            "rail_normalized": True,
+        }
 
     app.include_router(api)
 

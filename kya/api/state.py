@@ -19,13 +19,33 @@ from kya.clearing.evidence import envelope as evidence_envelope
 from kya.clearing.evidence import from_rail
 from kya.clearing.service import ClearingResult, ClearingService
 from kya.config import load_settings
-from kya.enums import Tier
+from kya.disputes.arbiter import LiabilityArbiter
+from kya.disputes.consent import ConsentLedger, create_consent_record
+from kya.disputes.representment import (
+    RepresentmentGenerator,
+    create_settlement_certificate,
+)
+from kya.enums import DisputeClaimReason, DisputeParty, Tier
 from kya.gateway import Gateway, GatewayResult
 from kya.obligation.postgres import PostgresObligationLedger
 from kya.obligation.receipt import CLAIM_DELIVERED_SKUS
+from kya.rails.cross_rail import CrossRailAdapter
 from kya.reconcile import Reconciler, install_webhook_handlers
 from kya.rails.webhooks import WebhookReceiver
-from kya.schemas import AgentRequest, DecisionEnvelope
+from kya.reputation.network import ReputationNetwork
+from kya.schemas import (
+    AgentReputationScore,
+    AgentRequest,
+    ClearingPassport,
+    ConsentRecord,
+    CrossRailPaymentToken,
+    DecisionEnvelope,
+    DisputeClaim,
+    DisputeRepresentmentPackage,
+    EvidenceEnvelope,
+    ObligationReceipt,
+    SettlementCertificate,
+)
 from kya.simulation import (
     AgentIdentity,
     Principal,
@@ -63,10 +83,18 @@ class KYAAppState:
     principal: Principal
     decisions: dict[str, StoredDecision] = field(default_factory=dict)
     clearing_results: dict[str, ClearingResult] = field(default_factory=dict)
+    dispute_packages: dict[str, DisputeRepresentmentPackage] = field(default_factory=dict)
+    settlement_certificates: dict[str, SettlementCertificate] = field(default_factory=dict)
+
     gateway: Gateway = field(init=False)
     clearing: ClearingService = field(init=False)
     reconciler: Reconciler = field(init=False)
     webhooks: WebhookReceiver = field(init=False)
+    consent_ledger: ConsentLedger = field(init=False)
+    liability_arbiter: LiabilityArbiter = field(init=False)
+    representment_gen: RepresentmentGenerator = field(init=False)
+    reputation_network: ReputationNetwork = field(init=False)
+    cross_rail_adapter: CrossRailAdapter = field(init=False)
 
     def __post_init__(self) -> None:
         self.gateway = self.sandbox.gateway()
@@ -83,6 +111,18 @@ class KYAAppState:
         )
         self.webhooks = WebhookReceiver(secret="sandbox_webhook_secret")
         install_webhook_handlers(self.webhooks, self.reconciler)
+
+        self.consent_ledger = ConsentLedger(clock=self.sandbox.clock)
+        self.liability_arbiter = LiabilityArbiter(clock=self.sandbox.clock)
+        self.representment_gen = RepresentmentGenerator(
+            consent_ledger=self.consent_ledger,
+            obligation_ledger=self.sandbox.ledger,
+            arbiter=self.liability_arbiter,
+            merchant_key=self.sandbox.merchant,
+            clock=self.sandbox.clock,
+        )
+        self.reputation_network = ReputationNetwork(clock=self.sandbox.clock)
+        self.cross_rail_adapter = CrossRailAdapter(clock=self.sandbox.clock)
 
     @classmethod
     def demo(cls, seed: bool = True) -> KYAAppState:
@@ -103,6 +143,9 @@ class KYAAppState:
 
     def create_order(self, request: AgentRequest) -> GatewayResult:
         result = self.gateway.create_order(request)
+        if request.mandates is not None:
+            rail_ref = result.order.get("id") if result.order else None
+            self.consent_ledger.record(request.mandates, anchored_rail_ref=rail_ref)
         self._record(request, result.envelope, result)
         return result
 
@@ -152,6 +195,7 @@ class KYAAppState:
         self._seed_counterfeit_callback_denial()
         self._seed_block_drain_denial()
         self._seed_obligation_mismatch_clearing()
+        self._seed_disputes_and_reputation()
 
     # -- inline pipeline scenarios --------------------------------------------
     #
@@ -340,6 +384,145 @@ class KYAAppState:
         clearing = self.clearing.submit(obligation.obligation_id, evidence, execute=False)
         self.clearing_results[obligation.obligation_id] = clearing
 
+    def _seed_disputes_and_reputation(self) -> None:
+        """Seed representative dispute cases and cross-merchant reputation profiles."""
+        # 1. Reputation Network Seeding (Multi-merchant passports)
+        self.reputation_network.record_merchant_passport(
+            "merchant_electronics_hub",
+            ClearingPassport(
+                agent_id=self.agent.agent_id,
+                tier=Tier.T3,
+                cleared_count=45,
+                disputed_count=0,
+                basis_drift_events=0,
+                total_cleared_value=350_000_00,
+            ),
+        )
+        self.reputation_network.record_merchant_passport(
+            "merchant_fashion_direct",
+            ClearingPassport(
+                agent_id=self.agent.agent_id,
+                tier=Tier.T2,
+                cleared_count=20,
+                disputed_count=0,
+                basis_drift_events=0,
+                total_cleared_value=120_000_00,
+            ),
+        )
+        self.reputation_network.record_merchant_passport(
+            "merchant_quick_grocery",
+            ClearingPassport(
+                agent_id="agent_risky_scraper",
+                tier=Tier.T0,
+                cleared_count=2,
+                disputed_count=4,
+                basis_drift_events=2,
+                total_cleared_value=12_000_00,
+            ),
+        )
+
+        # 2. Friendly Fraud Dispute (Merchant Protected)
+        allowed_decisions = [
+            d for d in self.decisions.values()
+            if d.result and d.result.obligation and d.envelope.allowed
+        ]
+        if allowed_decisions:
+            first_allowed = allowed_decisions[0]
+            if first_allowed.result and first_allowed.result.obligation:
+                obl = first_allowed.result.obligation
+                # Mint delivery evidence & clear it
+                evidence = evidence_envelope(
+                    obl.self_hash,
+                    [
+                        from_rail(
+                            "rec_delivery_verified_demo",
+                            CLAIM_DELIVERED_SKUS,
+                            obl.promised.line_items[0].sku,
+                            source="fedex_signed_tracking",
+                        )
+                    ],
+                )
+                clearing = self.clearing.submit(obl.obligation_id, evidence, execute=False)
+                self.clearing_results[obl.obligation_id] = clearing
+
+                claim = DisputeClaim(
+                    dispute_id=f"dsp_{uuid.uuid4().hex[:12]}",
+                    obligation_id=obl.obligation_id,
+                    rail_payment_id=obl.rail.ref,
+                    claimant=DisputeParty.BUYER_PRINCIPAL,
+                    claim_reason=DisputeClaimReason.UNAUTHORIZED_AGENT_SPEND,
+                    disputed_amount=obl.promised.total,
+                    details="Customer claims their AI shopping agent purchased headphones without consent.",
+                    claimed_at=now_utc(),
+                )
+                self.evaluate_dispute(claim, evidence=evidence)
+
+        # 3. Delivery Breach Dispute (Merchant Liable / Refund Issued)
+        mismatch_clearing = [
+            c for c in self.clearing_results.values()
+            if c.disputed
+        ]
+        if mismatch_clearing:
+            first_mismatch = mismatch_clearing[0]
+            claim_mismatch = DisputeClaim(
+                dispute_id=f"dsp_{uuid.uuid4().hex[:12]}",
+                obligation_id=first_mismatch.obligation.obligation_id,
+                rail_payment_id=first_mismatch.obligation.rail.ref,
+                claimant=DisputeParty.BUYER_PRINCIPAL,
+                claim_reason=DisputeClaimReason.NOT_AS_DESCRIBED,
+                disputed_amount=first_mismatch.obligation.promised.total,
+                details="Customer received SKU-DECOY-XYZ instead of promised budget phone.",
+                claimed_at=now_utc(),
+            )
+            self.evaluate_dispute(claim_mismatch)
+
+    def evaluate_dispute(
+        self,
+        claim: DisputeClaim,
+        evidence: EvidenceEnvelope | None = None,
+    ) -> DisputeRepresentmentPackage:
+        """Run liability arbitration and compile dispute representment package."""
+        obligation = self.sandbox.ledger.current(claim.obligation_id)
+        if obligation is None:
+            raise ValueError(f"unknown obligation {claim.obligation_id}")
+
+        clearing_res = self.clearing_results.get(claim.obligation_id)
+        consent = self.consent_ledger.get_by_chain_hash(obligation.mandate_chain_hash)
+
+        package = self.representment_gen.generate_package(
+            claim=claim,
+            obligation=obligation,
+            evidence=evidence,
+            clearing=clearing_res.decision if clearing_res else None,
+            clearing_result=clearing_res,
+            consent=consent,
+        )
+        self.dispute_packages[claim.dispute_id] = package
+        if package.settlement_certificate is not None:
+            self.settlement_certificates[obligation.obligation_id] = package.settlement_certificate
+        return package
+
+    def get_settlement_certificate(self, obligation_id: str) -> SettlementCertificate | None:
+        if obligation_id in self.settlement_certificates:
+            return self.settlement_certificates[obligation_id]
+        obligation = self.sandbox.ledger.current(obligation_id)
+        if obligation is None:
+            return None
+        clearing_res = self.clearing_results.get(obligation_id)
+        if clearing_res is None:
+            return None
+        cert = create_settlement_certificate(
+            obligation=obligation,
+            clearing_decision=clearing_res.decision,
+            merchant_key=self.sandbox.merchant,
+            clock=self.sandbox.clock,
+        )
+        self.settlement_certificates[obligation_id] = cert
+        return cert
+
+    def get_agent_reputation(self, agent_id: str) -> AgentReputationScore:
+        return self.reputation_network.calculate_reputation(agent_id)
+
     def benchmark(self) -> dict[str, Any]:
         path = Path(__file__).resolve().parents[2] / "redteam" / "results.json"
         return json.loads(path.read_text(encoding="utf-8"))
@@ -353,3 +536,11 @@ class KYAAppState:
             key=lambda result: result.decision.emitted_at,
             reverse=True,
         )
+
+    def ordered_dispute_packages(self) -> list[DisputeRepresentmentPackage]:
+        return sorted(
+            self.dispute_packages.values(),
+            key=lambda pkg: pkg.created_at,
+            reverse=True,
+        )
+

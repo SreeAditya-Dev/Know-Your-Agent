@@ -12,7 +12,16 @@ def test_sqlite_migration_creates_tables(tmp_path: Path):
 
     assert res.backend == "sqlite"
     assert "001_initial_schema" in res.applied
-    assert set(res.tables) >= {"passports", "obligations", "rail_bindings", "schema_migrations"}
+    assert "002_disputes_and_consent" in res.applied
+    assert set(res.tables) >= {
+        "passports",
+        "obligations",
+        "rail_bindings",
+        "schema_migrations",
+        "consent_records",
+        "settlement_certificates",
+        "dispute_packages",
+    }
 
     # Second run is idempotent
     res2 = migrate_sqlite(db_file)

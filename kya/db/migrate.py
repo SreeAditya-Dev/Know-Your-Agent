@@ -64,7 +64,58 @@ SQLITE_MIGRATIONS = {
         bound_at      TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS ix_bindings_rail_id ON rail_bindings(rail_id);
-    """
+    """,
+    "002_disputes_and_consent": """
+    CREATE TABLE IF NOT EXISTS consent_records (
+        consent_id           TEXT PRIMARY KEY,
+        principal_ref        TEXT NOT NULL,
+        agent_id             TEXT NOT NULL,
+        intent_id            TEXT NOT NULL,
+        intent_hash          TEXT NOT NULL,
+        cart_id              TEXT NOT NULL,
+        cart_hash            TEXT NOT NULL,
+        mandate_chain_hash   TEXT NOT NULL UNIQUE,
+        constraints          TEXT NOT NULL,
+        delegation_signature TEXT NOT NULL,
+        issued_at            TEXT NOT NULL,
+        expires_at           TEXT NOT NULL,
+        anchored_rail_ref    TEXT,
+        consent_hash         TEXT NOT NULL,
+        created_at           TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS ix_consent_chain_hash ON consent_records(mandate_chain_hash);
+    CREATE INDEX IF NOT EXISTS ix_consent_agent ON consent_records(agent_id);
+
+    CREATE TABLE IF NOT EXISTS settlement_certificates (
+        certificate_id         TEXT PRIMARY KEY,
+        obligation_id          TEXT NOT NULL,
+        version                INTEGER NOT NULL,
+        merchant_id            TEXT NOT NULL,
+        agent_id               TEXT NOT NULL,
+        principal_ref          TEXT NOT NULL,
+        rail_type              TEXT NOT NULL,
+        rail_ref               TEXT NOT NULL,
+        clearing_decision_hash TEXT NOT NULL,
+        aggregate_basis        TEXT NOT NULL,
+        performance_verdict    TEXT NOT NULL,
+        finality               TEXT NOT NULL,
+        evidence_item_hashes   TEXT NOT NULL,
+        issued_at              TEXT NOT NULL,
+        certificate_hash       TEXT NOT NULL,
+        merchant_signature     TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS ix_certificates_obligation ON settlement_certificates(obligation_id);
+
+    CREATE TABLE IF NOT EXISTS dispute_packages (
+        package_id         TEXT PRIMARY KEY,
+        dispute_id         TEXT NOT NULL UNIQUE,
+        obligation_id      TEXT NOT NULL,
+        created_at         TEXT NOT NULL,
+        executive_summary  TEXT NOT NULL,
+        payload            TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS ix_disputes_obligation ON dispute_packages(obligation_id);
+    """,
 }
 
 POSTGRES_MIGRATIONS = {
@@ -111,7 +162,58 @@ POSTGRES_MIGRATIONS = {
         bound_at      TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS ix_bindings_rail_id ON rail_bindings(rail_id);
-    """
+    """,
+    "002_disputes_and_consent": """
+    CREATE TABLE IF NOT EXISTS consent_records (
+        consent_id           TEXT PRIMARY KEY,
+        principal_ref        TEXT NOT NULL,
+        agent_id             TEXT NOT NULL,
+        intent_id            TEXT NOT NULL,
+        intent_hash          TEXT NOT NULL,
+        cart_id              TEXT NOT NULL,
+        cart_hash            TEXT NOT NULL,
+        mandate_chain_hash   TEXT NOT NULL UNIQUE,
+        constraints          TEXT NOT NULL,
+        delegation_signature TEXT NOT NULL,
+        issued_at            TEXT NOT NULL,
+        expires_at           TEXT NOT NULL,
+        anchored_rail_ref    TEXT,
+        consent_hash         TEXT NOT NULL,
+        created_at           TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS ix_pg_consent_chain_hash ON consent_records(mandate_chain_hash);
+    CREATE INDEX IF NOT EXISTS ix_pg_consent_agent ON consent_records(agent_id);
+
+    CREATE TABLE IF NOT EXISTS settlement_certificates (
+        certificate_id         TEXT PRIMARY KEY,
+        obligation_id          TEXT NOT NULL,
+        version                INTEGER NOT NULL,
+        merchant_id            TEXT NOT NULL,
+        agent_id               TEXT NOT NULL,
+        principal_ref          TEXT NOT NULL,
+        rail_type              TEXT NOT NULL,
+        rail_ref               TEXT NOT NULL,
+        clearing_decision_hash TEXT NOT NULL,
+        aggregate_basis        TEXT NOT NULL,
+        performance_verdict    TEXT NOT NULL,
+        finality               TEXT NOT NULL,
+        evidence_item_hashes   TEXT NOT NULL,
+        issued_at              TEXT NOT NULL,
+        certificate_hash       TEXT NOT NULL,
+        merchant_signature     TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS ix_pg_certificates_obligation ON settlement_certificates(obligation_id);
+
+    CREATE TABLE IF NOT EXISTS dispute_packages (
+        package_id         TEXT PRIMARY KEY,
+        dispute_id         TEXT NOT NULL UNIQUE,
+        obligation_id      TEXT NOT NULL,
+        created_at         TEXT NOT NULL,
+        executive_summary  TEXT NOT NULL,
+        payload            TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS ix_pg_disputes_obligation ON dispute_packages(obligation_id);
+    """,
 }
 
 

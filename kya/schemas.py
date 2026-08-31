@@ -18,9 +18,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from kya.canonical import digest, now_utc
 from kya.enums import (
     Decision,
+    DisputeClaimReason,
+    DisputeParty,
+    DisputeStatus,
     Finality,
     Gate,
     GateVerdict,
+    LiabilityOutcome,
     ObligationState,
     RailType,
     Tier,
@@ -472,3 +476,154 @@ class DecisionEnvelope(Base):
     @property
     def allowed(self) -> bool:
         return self.decision is Decision.ALLOW
+
+
+# --- consent ledger & evidence chain -----------------------------------------
+
+
+class ConsentRecord(Base):
+    """Timestamped, hash-anchored proof of human buyer delegation."""
+
+    consent_id: str
+    principal_ref: str
+    agent_id: str
+    intent_id: str
+    intent_hash: str
+    cart_id: str
+    cart_hash: str
+    mandate_chain_hash: str
+    constraints: IntentConstraints
+    delegation_signature: str
+    issued_at: datetime
+    expires_at: datetime
+    anchored_rail_ref: str | None = None
+    consent_hash: str = ""
+
+    def signing_payload(self) -> dict[str, Any]:
+        data = self.model_dump(mode="python")
+        data.pop("consent_hash", None)
+        return data
+
+    def compute_hash(self) -> str:
+        return digest(self.signing_payload())
+
+
+# --- settlement certificate --------------------------------------------------
+
+
+class SettlementCertificate(Base):
+    """Machine-readable, tamper-evident proof of obligation satisfaction.
+
+    Can be submitted directly to card networks (Visa Compelling Evidence 3.0 /
+    Mastercard representment) to defeat friendly fraud chargebacks.
+    """
+
+    certificate_id: str
+    obligation_id: str
+    version: int = 1
+    merchant_id: str
+    agent_id: str
+    principal_ref: str
+    rail: RailRef
+    clearing_decision_hash: str
+    aggregate_basis: EvidenceClass
+    performance_verdict: Literal["SATISFIED", "VIOLATED", "INDETERMINATE"]
+    finality: Finality
+    evidence_item_hashes: list[str] = Field(default_factory=list)
+    issued_at: datetime
+    certificate_hash: str = ""
+    merchant_signature: str = ""
+
+    def signing_payload(self) -> dict[str, Any]:
+        data = self.model_dump(mode="python")
+        for volatile in ("certificate_hash", "merchant_signature"):
+            data.pop(volatile, None)
+        return data
+
+    def compute_hash(self) -> str:
+        return digest(self.signing_payload())
+
+
+# --- disputes & liability arbitration ---------------------------------------
+
+
+class DisputeClaim(Base):
+    """An inbound dispute / chargeback claim filed by a buyer, agent, or rail."""
+
+    dispute_id: str
+    obligation_id: str
+    rail_payment_id: str | None = None
+    claimant: DisputeParty = DisputeParty.BUYER_PRINCIPAL
+    claim_reason: DisputeClaimReason = DisputeClaimReason.UNAUTHORIZED_AGENT_SPEND
+    disputed_amount: int = Field(ge=0, description="paise")
+    details: str = ""
+    claimed_at: datetime = Field(default_factory=now_utc)
+
+
+class LiabilityVerdict(Base):
+    """Multi-party deterministic fault assignment emitted by LiabilityArbiter."""
+
+    verdict_id: str
+    dispute_id: str
+    obligation_id: str
+    assigned_fault: DisputeParty
+    fault_allocation: dict[str, float] = Field(default_factory=dict)
+    outcome: LiabilityOutcome
+    confidence: float = Field(ge=0.0, le=1.0)
+    reason_codes: list[str] = Field(default_factory=list)
+    explanation: str = ""
+    compelling_evidence_summary: str = ""
+    evaluated_at: datetime = Field(default_factory=now_utc)
+
+
+class DisputeRepresentmentPackage(Base):
+    """Complete dispute-ready evidence package for card networks & Razorpay."""
+
+    package_id: str
+    dispute_id: str
+    obligation_id: str
+    created_at: datetime = Field(default_factory=now_utc)
+    executive_summary: str
+    liability_verdict: LiabilityVerdict
+    settlement_certificate: SettlementCertificate | None = None
+    consent_record: ConsentRecord | None = None
+    obligation_receipt: ObligationReceipt
+    evidence_envelope: EvidenceEnvelope | None = None
+    clearing_decision: ClearingDecision | None = None
+    razorpay_anchor_proof: dict[str, Any] = Field(default_factory=dict)
+    audit_trail_hash_chain: list[dict[str, Any]] = Field(default_factory=list)
+    representment_brief_markdown: str = ""
+
+
+# --- cross-rail & agent reputation -------------------------------------------
+
+
+class CrossRailPaymentToken(Base):
+    """Normalized representation of cross-rail payment tokens (Stripe SPT, MC Agentic Token, x402)."""
+
+    token_type: Literal["stripe_spt", "mc_agentic_token", "x402_usdc", "razorpay_order"]
+    token_id: str
+    agent_id: str
+    principal_ref: str
+    amount: int = Field(ge=0, description="paise or smallest unit")
+    currency: str = "INR"
+    issuer: str
+    expires_at: datetime
+    mandate_bound: bool = True
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentReputationScore(Base):
+    """Decentralized, cross-merchant Agent Credit Score and Trust Index."""
+
+    agent_id: str
+    credit_score: int = Field(ge=0, le=1000, description="0 to 1000 score")
+    risk_band: Literal["LOW_RISK", "MODERATE_RISK", "ELEVATED_RISK", "HIGH_RISK"]
+    network_cleared_volume: int = Field(ge=0, description="total paise cleared across network")
+    cross_merchant_cleared_count: int = Field(ge=0)
+    cross_merchant_dispute_rate: float = Field(ge=0.0, le=1.0)
+    distinct_merchants_count: int = Field(ge=0)
+    reputation_tier: Tier
+    attestations_count: int = 0
+    calculated_at: datetime = Field(default_factory=now_utc)
+

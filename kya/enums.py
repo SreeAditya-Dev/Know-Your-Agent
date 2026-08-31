@@ -124,3 +124,45 @@ class VerifierRole(str, Enum):
     RECEIPT = "receipt"
     SEMANTIC = "semantic"  # LLM — capped at SELF/SIGN by construction
     POLICY = "policy"
+
+
+class DisputeParty(str, Enum):
+    """Parties to an agentic commerce transaction for liability assignment."""
+
+    BUYER_PRINCIPAL = "BUYER_PRINCIPAL"
+    AGENT_OPERATOR = "AGENT_OPERATOR"
+    MERCHANT = "MERCHANT"
+    PAYMENT_RAIL = "PAYMENT_RAIL"
+    SPLIT = "SPLIT"
+
+
+class DisputeStatus(str, Enum):
+    """Lifecycle of an agent transaction dispute."""
+
+    OPEN = "OPEN"
+    EVALUATED = "EVALUATED"
+    REPRESENTED = "REPRESENTED"
+    CONTESTED = "CONTESTED"
+    RESOLVED = "RESOLVED"
+
+
+class LiabilityOutcome(str, Enum):
+    """Deterministic verdict of the Liability Arbiter."""
+
+    MERCHANT_PROTECTED = "MERCHANT_PROTECTED"
+    REFUND_ISSUED = "REFUND_ISSUED"
+    AGENT_FAULT_ESCROW_CLAIM = "AGENT_FAULT_ESCROW_CLAIM"
+    SPLIT_LIABILITY = "SPLIT_LIABILITY"
+    ESCALATE_HUMAN = "ESCALATE_HUMAN"
+
+
+class DisputeClaimReason(str, Enum):
+    """Standardized reason for a chargeback or dispute claim."""
+
+    UNAUTHORIZED_AGENT_SPEND = "unauthorized_agent_spend"
+    MERCHANDISE_NOT_RECEIVED = "merchandise_not_received"
+    NOT_AS_DESCRIBED = "not_as_described"
+    DUPLICATE_CHARGE = "duplicate_charge"
+    CANCELLED_SERVICE = "cancelled_service"
+    ROGUE_AGENT_INJECTION = "rogue_agent_injection"
+
