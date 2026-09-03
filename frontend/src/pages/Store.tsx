@@ -174,7 +174,7 @@ export function StorePage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-                  APEX KICKS <span className="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">AGENTIC STORE</span>
+                  APEX KICKS <span className="text-xs font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">AGENTIC STORE</span>
                 </h1>
                 <p className="text-xs text-slate-400 font-mono mt-0.5">
                   Machine-to-Machine Autonomous Commerce · Secured by KYA Gateway · Powered by Razorpay Rails
@@ -189,18 +189,18 @@ export function StorePage() {
               onClick={() => setShowOrdersDrawer(true)}
               className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition cursor-pointer"
             >
-              <Package size={15} className="text-indigo-400" />
+              <Package size={15} className="text-primary" />
               <span>Placed Orders</span>
-              <span className="bg-indigo-500/30 text-indigo-300 text-[11px] font-mono px-1.5 py-0.2 rounded-full border border-indigo-500/40">
+              <span className="bg-primary/15 text-primary text-[11px] font-mono px-1.5 py-0.2 rounded-full border border-primary/30">
                 {orders.length}
               </span>
             </button>
 
             <button
               onClick={() => setShowMCPModal(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-200 text-xs font-medium border border-indigo-700/50 shadow-sm transition cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 shadow-sm transition cursor-pointer"
             >
-              <Terminal size={15} className="text-indigo-400" />
+              <Terminal size={15} className="text-primary" />
               <span>Connect Claude Code / ChatGPT</span>
             </button>
 
@@ -237,11 +237,11 @@ export function StorePage() {
       </header>
 
       {/* AI Autonomous Buyer Assistant Console */}
-      <section className="mb-10 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 shadow-2xl relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <section className="mb-10 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-900 border border-primary/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
               <Bot size={18} />
             </div>
             <div>
@@ -260,8 +260,8 @@ export function StorePage() {
 
         {/* Prompt Input Bar */}
         <div className="relative mt-3">
-          <div className="flex items-center gap-2 bg-slate-950/90 border border-slate-700 rounded-xl p-2 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition">
-            <Sparkles className="text-indigo-400 ml-2 shrink-0" size={18} />
+          <div className="flex items-center gap-2 bg-slate-950/90 border border-slate-700 rounded-xl p-2 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
+            <Sparkles className="text-primary ml-2 shrink-0" size={18} />
             <input
               type="text"
               value={agentPrompt}
@@ -273,7 +273,7 @@ export function StorePage() {
             <button
               onClick={() => handleRunAgentPrompt()}
               disabled={isExecutingAgent || !agentPrompt.trim()}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shrink-0 shadow-md cursor-pointer"
+              className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-xs font-semibold rounded-lg flex items-center gap-1.5 transition shrink-0 shadow-md cursor-pointer"
             >
               {isExecutingAgent ? (
                 <>
@@ -385,7 +385,7 @@ export function StorePage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search shoes, brand, specs..."
-              className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 text-xs text-white placeholder-slate-500 border border-slate-800 focus:outline-none focus:border-indigo-500"
+              className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 text-xs text-white placeholder-slate-500 border border-slate-800 focus:outline-none focus:border-primary"
             />
           </div>
 
@@ -396,7 +396,7 @@ export function StorePage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                   selectedCategory === cat
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
                     : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                 }`}
               >
@@ -418,7 +418,7 @@ export function StorePage() {
           return (
             <div
               key={product.sku}
-              className="bg-slate-900 border border-slate-800 hover:border-indigo-500/40 rounded-2xl overflow-hidden transition duration-200 shadow-xl flex flex-col group"
+              className="bg-slate-900 border border-slate-800 hover:border-primary/30 rounded-2xl overflow-hidden transition duration-200 shadow-xl flex flex-col group"
             >
               {/* Product Image Box */}
               <div className="relative h-56 bg-slate-950 overflow-hidden">
@@ -428,7 +428,7 @@ export function StorePage() {
                   className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                 />
                 <div className="absolute top-3 left-3 flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-900/90 text-indigo-300 text-[11px] font-mono border border-slate-700 backdrop-blur-sm">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-900/90 text-primary text-[11px] font-mono border border-slate-700 backdrop-blur-sm">
                     {product.category}
                   </span>
                   {discountPct > 0 && (
@@ -480,7 +480,7 @@ export function StorePage() {
                           onClick={() => setProductSizes((prev) => ({ ...prev, [product.sku]: s }))}
                           className={`w-8 h-8 rounded-lg text-xs font-mono font-medium transition cursor-pointer ${
                             selectedSize === s
-                              ? 'bg-indigo-600 text-white font-bold shadow-sm'
+                              ? 'bg-primary text-primary-foreground font-bold shadow-sm'
                               : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'
                           }`}
                         >
@@ -514,7 +514,7 @@ export function StorePage() {
                           max_budget_inr: product.price_inr + 1000,
                         })
                       }}
-                      className="px-3 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-lg shadow-indigo-600/20 cursor-pointer"
+                      className="px-3 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-lg shadow-primary/20 cursor-pointer"
                     >
                       <Bot size={14} />
                       <span>Buy with AI Agent</span>
@@ -552,7 +552,7 @@ export function StorePage() {
                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                       : agentResponse?.decision === 'DENY'
                       ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                      : 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+                      : 'bg-primary/10 text-primary border border-primary/20'
                   }`}
                 >
                   <Bot size={20} />
@@ -762,7 +762,7 @@ export function StorePage() {
                 </button>
                 <Link
                   to="/dashboard"
-                  className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <span>View in KYA Control Plane</span>
                   <ExternalLink size={13} />
@@ -808,7 +808,7 @@ export function StorePage() {
                   <div className="text-[11px] font-mono text-slate-400 mt-0.5">
                     Size: {checkoutSize} · Qty: {checkoutQty}
                   </div>
-                  <div className="text-xs font-bold text-indigo-400 mt-1">
+                  <div className="text-xs font-bold text-primary mt-1">
                     ₹{(checkoutProduct.price_inr * checkoutQty).toLocaleString('en-IN')}
                   </div>
                 </div>
@@ -840,18 +840,18 @@ export function StorePage() {
                     onClick={() => setSelectedPaymentRail('RAZORPAY_TEST')}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                       selectedPaymentRail === 'RAZORPAY_TEST'
-                        ? 'bg-indigo-950/40 border-indigo-500 text-white'
+                        ? 'bg-slate-900 border-primary text-white'
                         : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <CreditCard size={16} className="text-indigo-400" />
+                      <CreditCard size={16} className="text-primary" />
                       <div>
                         <div className="text-xs font-bold">Razorpay Test Card / UPI ID</div>
                         <div className="text-[10px] opacity-70">Standard Razorpay payment rails with auto-capture</div>
                       </div>
                     </div>
-                    {selectedPaymentRail === 'RAZORPAY_TEST' && <Check size={16} className="text-indigo-400" />}
+                    {selectedPaymentRail === 'RAZORPAY_TEST' && <Check size={16} className="text-primary" />}
                   </div>
                 </div>
               </div>
@@ -876,7 +876,7 @@ export function StorePage() {
               <button
                 onClick={handleDirectCheckout}
                 disabled={isCheckingOut}
-                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-2 transition shadow-lg shadow-indigo-600/20 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold flex items-center gap-2 transition shadow-lg shadow-primary/20 cursor-pointer"
               >
                 {isCheckingOut ? (
                   <>
@@ -901,7 +901,7 @@ export function StorePage() {
           <div className="bg-slate-900 border-l border-slate-700 w-full max-w-md h-full flex flex-col shadow-2xl">
             <div className="p-5 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <Package className="text-indigo-400" size={20} />
+                <Package className="text-primary" size={20} />
                 <h3 className="text-sm font-bold text-white">Your Placed Orders ({orders.length})</h3>
               </div>
               <button
@@ -921,7 +921,7 @@ export function StorePage() {
                 orders.map((ord) => (
                   <div key={ord.order_id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono text-indigo-400 font-bold">{ord.order_id}</span>
+                      <span className="font-mono text-primary font-bold">{ord.order_id}</span>
                       <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold border border-emerald-500/30">
                         {ord.status}
                       </span>
@@ -984,7 +984,7 @@ export function StorePage() {
           <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
             <div className="p-5 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <Terminal className="text-indigo-400" size={20} />
+                <Terminal className="text-primary" size={20} />
                 <div>
                   <h3 className="text-sm font-bold text-white">Connect Claude Code & ChatGPT Desktop</h3>
                   <p className="text-[11px] text-slate-400 font-mono">
@@ -1006,7 +1006,7 @@ export function StorePage() {
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-white flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+                    <span className="w-2 h-2 rounded-full bg-primary"></span>
                     Option 1: Claude Code CLI
                   </span>
                   <button
@@ -1022,7 +1022,7 @@ export function StorePage() {
                     <span>Copy Command</span>
                   </button>
                 </div>
-                <pre className="p-2.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-indigo-300 overflow-x-auto">
+                <pre className="p-2.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-primary overflow-x-auto">
                   claude mcp add shop-pay-agent python D:/hackathon/Razorpay/know-your-agent/shop_mcp.py
                 </pre>
               </div>
@@ -1071,8 +1071,8 @@ export function StorePage() {
               </div>
 
               {/* Example Prompts for Claude / ChatGPT */}
-              <div className="p-4 rounded-xl bg-indigo-950/30 border border-indigo-800/40 space-y-2">
-                <div className="font-bold text-indigo-300">Sample Prompts to try in Claude Code / ChatGPT:</div>
+              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                <div className="font-bold text-primary">Sample Prompts to try in Claude Code / ChatGPT:</div>
                 <ul className="list-disc list-inside space-y-1 text-slate-300 text-xs">
                   <li>
                     <span className="font-mono text-slate-200">"Search store catalog for Puma running shoes under ₹10,000"</span>
@@ -1090,7 +1090,7 @@ export function StorePage() {
             <div className="p-4 border-t border-slate-800 bg-slate-950 flex items-center justify-end">
               <button
                 onClick={() => setShowMCPModal(false)}
-                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold transition cursor-pointer"
               >
                 Done
               </button>

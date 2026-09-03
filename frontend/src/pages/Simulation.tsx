@@ -27,14 +27,14 @@ type CategoryFilter = 'ALL' | 'LEGIT' | 'INTEGRITY' | 'MANDATE' | 'VELOCITY' | '
 const STEP_COLORS: Record<string, { dot: string; text: string; bg: string; border: string }> = {
   PASS: { dot: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
   ALLOW: { dot: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-  MINTED: { dot: 'bg-purple-500', text: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200' },
+  MINTED: { dot: 'bg-primary', text: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/20' },
   FAIL: { dot: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200' },
   DENY: { dot: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200' },
   REJECTED: { dot: 'bg-rose-400', text: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200' },
   QUARANTINE: { dot: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
   STEP_UP: { dot: 'bg-sky-500', text: 'text-sky-700', bg: 'bg-sky-50', border: 'border-sky-200' },
   SKIPPED: { dot: 'bg-slate-300', text: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-200' },
-  EVALUATING: { dot: 'bg-indigo-500 animate-ping', text: 'text-indigo-700', bg: 'bg-indigo-50', border: 'border-indigo-300' },
+  EVALUATING: { dot: 'bg-amber-500 animate-ping', text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-300' },
   PENDING: { dot: 'bg-slate-200', text: 'text-slate-400', bg: 'bg-white', border: 'border-slate-200' },
 }
 
@@ -253,8 +253,8 @@ export function SimulationPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <div className="rounded-sm px-3 py-1.5 font-mono text-xs font-semibold whitespace-nowrap bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+          <div className="rounded-sm px-3 py-1.5 font-mono text-xs font-semibold whitespace-nowrap bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
             Live Sandboxed Pipeline
           </div>
         </div>
@@ -298,7 +298,7 @@ export function SimulationPage() {
                   }}
                   className={`text-left p-3.5 rounded border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
                     isSelected
-                      ? 'border-primary bg-[#f6f7fd] ring-2 ring-signal/20'
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                       : 'border-border bg-card hover:border-primary/40 hover:bg-muted/30'
                   }`}
                 >
@@ -680,7 +680,7 @@ export function SimulationPage() {
                   <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1.5">
                     Context Metadata
                   </h4>
-                  <pre className="m-0 p-3 bg-[#1e222b] text-[#e2e8f0] rounded text-[11px] font-mono overflow-x-auto">
+                  <pre className="m-0 p-3 bg-card text-foreground rounded text-[11px] font-mono overflow-x-auto">
                     {JSON.stringify(activeInspectingStep.metadata, null, 2)}
                   </pre>
                 </div>
@@ -694,7 +694,7 @@ export function SimulationPage() {
             meta={`${logs.length} events logged`}
           >
             <div className="p-4.5 flex flex-col h-[400px]">
-              <div className="flex-1 bg-[#10141d] border border-[#232936] rounded-md p-3 font-mono text-[11.5px] text-emerald-400 overflow-y-auto space-y-1">
+              <div className="flex-1 bg-card border border-border rounded-md p-3 font-mono text-[11.5px] text-emerald-400 overflow-y-auto space-y-1">
                 <div className="text-slate-500 pb-1 border-b border-slate-800 flex items-center justify-between">
                   <span>KYA/control-plane-sim v0.1.0</span>
                   <span className="text-slate-600">RFC 9421 / AP2 Guard</span>
@@ -715,7 +715,7 @@ export function SimulationPage() {
                           : log.includes('STEP_UP')
                           ? 'text-sky-400'
                           : log.includes('MINTED') || log.includes('complete')
-                          ? 'text-purple-300 font-semibold'
+                          ? 'text-primary font-semibold'
                           : 'text-emerald-400'
                       }
                     >
@@ -752,39 +752,39 @@ export function SimulationPage() {
 
           {/* Minted Obligation Receipt Banner */}
           {simResult.obligation ? (
-            <div className="p-4.5 bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-md space-y-3">
+            <div className="p-4.5 bg-primary/5 border border-primary/20 rounded-md space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
-                  <Shield size={15} className="text-purple-700" />
+                <span className="font-mono text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <Shield size={15} className="text-primary" />
                   Sealed Obligation Receipt Minted
                 </span>
-                <span className="px-2 py-0.5 rounded text-[10.5px] font-mono font-bold bg-purple-200 text-purple-900">
+                <span className="px-2 py-0.5 rounded text-[10.5px] font-mono font-bold bg-primary/20 text-foreground">
                   {simResult.obligation.rail_type}
                 </span>
               </div>
 
               <div className="grid grid-cols-3 max-md:grid-cols-1 gap-3 font-mono text-xs">
-                <div className="p-2.5 bg-white/80 rounded border border-purple-100">
+                <div className="p-2.5 bg-white/80 rounded border border-primary/20">
                   <span className="text-slate-500 block text-[10px] uppercase">Obligation ID</span>
-                  <span className="font-semibold text-purple-950 font-mono text-[12px]">
+                  <span className="font-semibold text-foreground font-mono text-[12px]">
                     {simResult.obligation.obligation_id}
                   </span>
                 </div>
-                <div className="p-2.5 bg-white/80 rounded border border-purple-100">
+                <div className="p-2.5 bg-white/80 rounded border border-primary/20">
                   <span className="text-slate-500 block text-[10px] uppercase">Amount Due</span>
-                  <span className="font-semibold text-purple-950 font-mono text-[12px]">
+                  <span className="font-semibold text-foreground font-mono text-[12px]">
                     ₹{simResult.obligation.amount_due_inr.toFixed(2)} {simResult.obligation.currency}
                   </span>
                 </div>
-                <div className="p-2.5 bg-white/80 rounded border border-purple-100">
+                <div className="p-2.5 bg-white/80 rounded border border-primary/20">
                   <span className="text-slate-500 block text-[10px] uppercase">Ledger Entries</span>
-                  <span className="font-semibold text-purple-950 font-mono text-[12px]">
+                  <span className="font-semibold text-foreground font-mono text-[12px]">
                     {simResult.obligation.ledger_entries} chained
                   </span>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-purple-200/60 font-mono text-[11px] text-purple-950 flex flex-wrap justify-between gap-2">
+              <div className="pt-2 border-t border-primary/20/60 font-mono text-[11px] text-foreground flex flex-wrap justify-between gap-2">
                 <span>Receipt Hash: <span className="font-semibold">{simResult.obligation.receipt_hash.substring(0, 24)}...</span></span>
                 <span>Ledger Tip: <span className="font-semibold">{simResult.obligation.ledger_tip.substring(0, 24)}...</span></span>
               </div>
@@ -807,7 +807,7 @@ export function SimulationPage() {
             </button>
 
             {showRawJson && (
-              <pre className="mt-3 p-4 bg-[#1e222b] text-[#e2e8f0] rounded text-[11px] font-mono overflow-x-auto max-h-[300px]">
+              <pre className="mt-3 p-4 bg-card text-foreground rounded text-[11px] font-mono overflow-x-auto max-h-[300px]">
                 {JSON.stringify(simResult.raw_request, null, 2)}
               </pre>
             )}

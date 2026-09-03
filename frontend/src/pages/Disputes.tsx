@@ -126,20 +126,20 @@ export function DisputesPage() {
 
       {/* Agent Reputation Card */}
       {reputation && (
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-lg p-5 text-white shadow-sm border border-slate-700/50">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-lg p-5 text-white shadow-sm border border-slate-700/50">
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <Bot className="text-indigo-400" size={20} />
-                <span className="font-mono text-xs text-indigo-300 uppercase tracking-wider">
+                <Bot className="text-primary" size={20} />
+                <span className="font-mono text-xs text-primary uppercase tracking-wider">
                   Cross-Merchant Agent Credit Score
                 </span>
-                <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 text-[11px] font-mono rounded">
+                <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 text-[11px] font-mono rounded">
                   {reputation.risk_band}
                 </span>
               </div>
               <h2 className="text-xl font-bold mt-1">
-                Agent ID: <span className="font-mono text-indigo-200">{reputation.agent_id}</span>
+                Agent ID: <span className="font-mono text-foreground">{reputation.agent_id}</span>
               </h2>
             </div>
             <div className="flex items-center gap-6">
@@ -155,9 +155,9 @@ export function DisputesPage() {
                   {(reputation.cross_merchant_dispute_rate * 100).toFixed(1)}%
                 </div>
               </div>
-              <div className="bg-slate-800/80 border border-indigo-500/40 rounded-xl px-4 py-2 text-center min-w-[100px]">
+              <div className="bg-slate-800/80 border border-primary/30 rounded-xl px-4 py-2 text-center min-w-[100px]">
                 <div className="text-[10px] uppercase font-mono text-slate-400">Credit Score</div>
-                <div className="text-2xl font-bold font-mono text-indigo-400">
+                <div className="text-2xl font-bold font-mono text-primary">
                   {reputation.credit_score}
                   <span className="text-xs text-slate-400 font-normal">/1000</span>
                 </div>
@@ -208,7 +208,7 @@ export function DisputesPage() {
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : d.outcome === 'REFUND_ISSUED'
                                 ? 'bg-amber-100 text-amber-800'
-                                : 'bg-purple-100 text-purple-800'
+                                : 'bg-primary/10 text-primary'
                             }`}
                           >
                             {d.outcome}
@@ -299,7 +299,7 @@ export function DisputesPage() {
                     ? 'bg-emerald-50/70 border-emerald-200'
                     : selectedDetail.liability_verdict.outcome === 'REFUND_ISSUED'
                     ? 'bg-amber-50/70 border-amber-200'
-                    : 'bg-purple-50/70 border-purple-200'
+                    : 'bg-primary/5 border-primary/20'
                 }`}
               >
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
@@ -398,7 +398,7 @@ export function DisputesPage() {
                     <div className="flex justify-between items-center bg-slate-900 text-white p-3 rounded">
                       <div>
                         <div className="text-[10px] text-slate-400 uppercase">Certificate ID</div>
-                        <div className="text-xs font-bold text-indigo-300">
+                        <div className="text-xs font-bold text-primary">
                           {selectedDetail.settlement_certificate.certificate_id}
                         </div>
                       </div>
