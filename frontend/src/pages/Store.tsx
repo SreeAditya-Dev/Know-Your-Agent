@@ -379,7 +379,7 @@ export function StorePage() {
         {/* Search & Filter Controls */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
@@ -595,10 +595,10 @@ export function StorePage() {
                 <div
                   className={`p-4 rounded-xl border ${
                     agentResponse.decision === 'ALLOW'
-                      ? 'bg-emerald-950/40 border-emerald-700/50 text-emerald-200'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                       : agentResponse.decision === 'DENY'
-                      ? 'bg-rose-950/40 border-rose-700/50 text-rose-200'
-                      : 'bg-amber-950/40 border-amber-700/50 text-amber-200'
+                      ? 'bg-rose-50 border-rose-200 text-rose-900'
+                      : 'bg-amber-50 border-amber-200 text-amber-900'
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -620,21 +620,21 @@ export function StorePage() {
 
                       {/* Razorpay & Obligation IDs */}
                       {agentResponse.order && (
-                        <div className="mt-3 pt-3 border-t border-emerald-700/30 flex items-center gap-4 flex-wrap font-mono text-[11px]">
+                        <div className="mt-3 pt-3 border-t border-emerald-200 flex items-center gap-4 flex-wrap font-mono text-[11px]">
                           <div>
-                            <span className="text-emerald-400">Order ID: </span>
-                            <span className="text-white font-semibold">{agentResponse.order.order_id}</span>
+                            <span className="text-emerald-700 font-semibold">Order ID: </span>
+                            <span className="text-foreground font-semibold">{agentResponse.order.order_id}</span>
                           </div>
                           {agentResponse.razorpay_order_id && (
                             <div>
-                              <span className="text-emerald-400">Razorpay ID: </span>
-                              <span className="text-white">{agentResponse.razorpay_order_id}</span>
+                              <span className="text-emerald-700 font-semibold">Razorpay ID: </span>
+                              <span className="text-foreground font-semibold">{agentResponse.razorpay_order_id}</span>
                             </div>
                           )}
                           {agentResponse.obligation_id && (
                             <div>
-                              <span className="text-emerald-400">Obligation ID: </span>
-                              <span className="text-white">{agentResponse.obligation_id}</span>
+                              <span className="text-emerald-700 font-semibold">Obligation ID: </span>
+                              <span className="text-foreground font-semibold">{agentResponse.obligation_id}</span>
                             </div>
                           )}
                         </div>
@@ -646,7 +646,7 @@ export function StorePage() {
 
               {/* Execution Steps Trace */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 font-mono">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 font-mono">
                   Stage-by-Stage Verification Trace
                 </h4>
 
@@ -683,7 +683,7 @@ export function StorePage() {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <span className="text-[11px] font-mono text-slate-500">{step.elapsed_ms} ms</span>
+                            <span className="text-[11px] font-mono text-muted-foreground">{step.elapsed_ms} ms</span>
                             <span
                               className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
                                 isPass
@@ -707,14 +707,14 @@ export function StorePage() {
                               if (k === 'gates_evaluated' && Array.isArray(v)) {
                                 return (
                                   <div key={k} className="mt-1 pt-1 border-t border-border">
-                                    <span className="text-slate-400 font-semibold">Evaluated Gates:</span>
+                                    <span className="text-muted-foreground font-semibold">Evaluated Gates:</span>
                                     <div className="grid grid-cols-2 gap-1.5 mt-1">
                                       {v.map((g: any, gIdx: number) => (
                                         <div
                                           key={gIdx}
                                           className="p-1 rounded bg-muted/40 border border-border flex items-center justify-between text-[10px]"
                                         >
-                                          <span className="text-slate-300">{g.gate}</span>
+                                          <span className="text-foreground font-medium">{g.gate}</span>
                                           <span
                                             className={
                                               g.verdict === 'ALLOW'
@@ -734,8 +734,8 @@ export function StorePage() {
                               }
                               return (
                                 <div key={k} className="flex items-center justify-between gap-4">
-                                  <span className="text-slate-500">{k}:</span>
-                                  <span className="text-slate-200 truncate max-w-xs">{String(v)}</span>
+                                  <span className="text-muted-foreground">{k}:</span>
+                                  <span className="text-foreground font-medium truncate max-w-xs">{String(v)}</span>
                                 </div>
                               )
                             })}
@@ -822,7 +822,7 @@ export function StorePage() {
                     onClick={() => setSelectedPaymentRail('RESERVE_PAY')}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                       selectedPaymentRail === 'RESERVE_PAY'
-                        ? 'bg-primary/10 border-primary text-white'
+                        ? 'bg-primary/10 border-primary text-foreground font-semibold'
                         : 'bg-card border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
@@ -914,7 +914,7 @@ export function StorePage() {
 
             <div className="p-5 overflow-y-auto flex-1 space-y-4">
               {orders.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 font-mono text-xs">
+                <div className="text-center py-12 text-muted-foreground font-mono text-xs">
                   No orders placed yet. Run an AI agent prompt or execute 1-click checkout!
                 </div>
               ) : (
@@ -932,33 +932,33 @@ export function StorePage() {
                         <img src={ord.image_url} alt={ord.item_name} className="w-12 h-12 rounded-lg object-cover" />
                       )}
                       <div>
-                        <h4 className="text-xs font-bold text-white">{ord.item_name}</h4>
-                        <div className="text-[11px] font-mono text-slate-400">
+                        <h4 className="text-xs font-bold text-foreground">{ord.item_name}</h4>
+                        <div className="text-[11px] font-mono text-muted-foreground">
                           Size: {ord.size} · Qty: {ord.quantity} · ₹{ord.amount_inr.toLocaleString('en-IN')}
                         </div>
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-border/80 text-[10px] font-mono text-slate-400 space-y-1">
+                    <div className="pt-2 border-t border-border/80 text-[10px] font-mono text-muted-foreground space-y-1">
                       <div className="flex items-center justify-between">
                         <span>Buyer Type:</span>
-                        <span className="text-slate-200">{ord.buyer_source}</span>
+                        <span className="text-foreground font-medium">{ord.buyer_source}</span>
                       </div>
                       {ord.razorpay_order_id && (
                         <div className="flex items-center justify-between">
                           <span>Razorpay Order:</span>
-                          <span className="text-slate-200">{ord.razorpay_order_id}</span>
+                          <span className="text-foreground font-medium">{ord.razorpay_order_id}</span>
                         </div>
                       )}
                       {ord.obligation_id && (
                         <div className="flex items-center justify-between">
                           <span>Obligation ID:</span>
-                          <span className="text-emerald-400">{ord.obligation_id}</span>
+                          <span className="text-emerald-700 font-semibold">{ord.obligation_id}</span>
                         </div>
                       )}
                       <div className="flex items-center justify-between">
                         <span>KYA Verified:</span>
-                        <span className="text-emerald-400">✓ Cryptographically Anchored</span>
+                        <span className="text-emerald-700 font-semibold">✓ Cryptographically Anchored</span>
                       </div>
                     </div>
                   </div>
@@ -987,12 +987,12 @@ export function StorePage() {
                 <Terminal className="text-primary" size={20} />
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Connect Claude Code & ChatGPT Desktop</h3>
-                  <p className="text-[11px] text-slate-400 font-mono">
+                  <p className="text-[11px] text-muted-foreground font-mono">
                     Model Context Protocol (MCP) Server for Machine-to-Machine Checkout
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowMCPModal(false)} className="text-slate-400 hover:text-white cursor-pointer">
+              <button onClick={() => setShowMCPModal(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
                 ✕
               </button>
             </div>
@@ -1030,7 +1030,7 @@ export function StorePage() {
               {/* Option 2: Claude Desktop Config */}
               <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-white flex items-center gap-1.5">
+                  <span className="font-bold text-foreground flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-primary"></span>
                     Option 2: Claude Desktop Config (`claude_desktop_config.json`)
                   </span>
@@ -1073,15 +1073,15 @@ export function StorePage() {
               {/* Example Prompts for Claude / ChatGPT */}
               <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-2">
                 <div className="font-bold text-primary">Sample Prompts to try in Claude Code / ChatGPT:</div>
-                <ul className="list-disc list-inside space-y-1 text-slate-300 text-xs">
+                <ul className="list-disc list-inside space-y-1.5 text-muted-foreground text-xs">
                   <li>
-                    <span className="font-mono text-slate-200">"Search store catalog for Puma running shoes under ₹10,000"</span>
+                    <span className="font-mono text-foreground font-medium">"Search store catalog for Puma running shoes under ₹10,000"</span>
                   </li>
                   <li>
-                    <span className="font-mono text-slate-200">"Buy the Puma Velocity Nitro 3 shoes in size 10 under ₹8,000 budget"</span>
+                    <span className="font-mono text-foreground font-medium">"Buy the Puma Velocity Nitro 3 shoes in size 10 under ₹8,000 budget"</span>
                   </li>
                   <li>
-                    <span className="font-mono text-slate-200">"Check and execute UPI Reserve Pay block debit for ₹10,000"</span>
+                    <span className="font-mono text-foreground font-medium">"Check and execute UPI Reserve Pay block debit for ₹10,000"</span>
                   </li>
                 </ul>
               </div>
