@@ -7,12 +7,13 @@ import { DecisionPage } from './pages/Decision'
 import { SimulationPage } from './pages/Simulation'
 import { DisputesPage } from './pages/Disputes'
 import { StorePage } from './pages/Store'
+import { LandingPage } from './pages/LandingPage'
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route element={<Layout />}>
-        <Route path="/" element={<Navigate to="/store" replace />} />
         <Route path="/store" element={<StorePage />} />
         <Route path="/dashboard/store" element={<StorePage />} />
         <Route path="/dashboard" element={<Dashboard />} />
