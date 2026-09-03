@@ -33,7 +33,7 @@ export function DecisionPage() {
     <>
       <Link
         to="/dashboard"
-        className="inline-flex items-center gap-1.5 text-signal text-xs font-semibold no-underline hover:underline mb-4 cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-primary text-xs font-semibold no-underline hover:underline mb-4 cursor-pointer"
       >
         <ArrowLeft size={14} />
         Back to overview
@@ -41,7 +41,7 @@ export function DecisionPage() {
 
       <section className="flex justify-between gap-5 items-center mb-6 max-md:flex-col max-md:items-start">
         <div>
-          <p className="m-0 mb-1.5 text-ink-faint font-mono text-[11px] font-medium tracking-widest uppercase">
+          <p className="m-0 mb-1.5 text-muted-foreground/70 font-mono text-[11px] font-medium tracking-widest uppercase">
             Decision record
           </p>
           <h1 className="m-0 text-2xl font-semibold leading-tight tracking-tight font-mono">
@@ -65,11 +65,11 @@ export function DecisionPage() {
               <div
                 key={dt}
                 className={`flex justify-between gap-4 py-3 ${
-                  i < arr.length - 1 ? 'border-b border-line-soft' : ''
+                  i < arr.length - 1 ? 'border-b border-border/50' : ''
                 }`}
               >
-                <dt className="text-ink-soft text-[13px]">{dt}</dt>
-                <dd className="m-0 text-ink font-mono text-[13px] font-medium text-right break-words">
+                <dt className="text-muted-foreground text-[13px]">{dt}</dt>
+                <dd className="m-0 text-foreground font-mono text-[13px] font-medium text-right break-words">
                   {dd}
                 </dd>
               </div>

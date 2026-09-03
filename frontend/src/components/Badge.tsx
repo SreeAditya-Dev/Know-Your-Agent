@@ -1,16 +1,16 @@
 const styles: Record<string, string> = {
-  allow: 'bg-allow-bg text-allow',
-  final: 'bg-allow-bg text-allow',
-  deny: 'bg-deny-bg text-deny',
-  disputed: 'bg-deny-bg text-deny',
-  quarantine: 'bg-quarantine-bg text-quarantine',
-  step_up: 'bg-step-up-bg text-step-up',
-  provisional: 'bg-step-up-bg text-step-up',
+  allow: 'bg-green-500/10 text-green-600',
+  final: 'bg-green-500/10 text-green-600',
+  deny: 'bg-destructive/10 text-destructive',
+  disputed: 'bg-destructive/10 text-destructive',
+  quarantine: 'bg-orange-500/10 text-orange-500',
+  step_up: 'bg-blue-500/10 text-blue-600',
+  provisional: 'bg-blue-500/10 text-blue-600',
 }
 
 export function Badge({ value }: { value: string }) {
   const key = value.toLowerCase()
-  const cls = styles[key] ?? 'bg-line-soft text-ink-soft'
+  const cls = styles[key] ?? 'bg-line-soft text-muted-foreground'
 
   return (
     <span

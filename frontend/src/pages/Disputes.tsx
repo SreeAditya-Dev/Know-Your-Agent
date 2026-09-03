@@ -100,14 +100,14 @@ export function DisputesPage() {
       {/* Header */}
       <section className="flex justify-between gap-5 items-end max-md:flex-col max-md:items-start">
         <div>
-          <p className="m-0 mb-1.5 text-ink-faint font-mono text-[11px] font-medium tracking-widest uppercase">
+          <p className="m-0 mb-1.5 text-muted-foreground/70 font-mono text-[11px] font-medium tracking-widest uppercase">
             Disputes & Consent Engine
           </p>
           <h1 className="m-0 text-2xl font-semibold leading-tight tracking-tight flex items-center gap-2.5">
-            <Scale className="text-signal" size={26} />
+            <Scale className="text-primary" size={26} />
             Liability Arbiter & Consent Evidence Chain
           </h1>
-          <p className="text-ink-faint text-sm mt-1 max-w-3xl">
+          <p className="text-muted-foreground/70 text-sm mt-1 max-w-3xl">
             Solves the industry liability gap where Visa/Mastercard rules assume human buyers.
             KYA uses cryptographic <strong>Consent Ledgers</strong>, <strong>Obligation Receipts</strong>, and <strong>Verification Mesh Proofs</strong> to deterministically assign fault and auto-compile Visa Compelling Evidence 3.0 packages.
           </p>
@@ -174,7 +174,7 @@ export function DisputesPage() {
           <Panel title="Adjudicated Disputes" meta={`${disputes.length} cases`}>
             <div className="divide-y divide-line-soft">
               {disputes.length === 0 ? (
-                <div className="p-6 text-center text-ink-faint text-sm">
+                <div className="p-6 text-center text-muted-foreground/70 text-sm">
                   No dispute claims recorded.
                 </div>
               ) : (
@@ -185,7 +185,7 @@ export function DisputesPage() {
                       key={d.dispute_id}
                       onClick={() => handleSelectDispute(d.dispute_id)}
                       className={`p-4 transition-colors cursor-pointer hover:bg-slate-50 flex items-start justify-between gap-3 ${
-                        isSelected ? 'bg-slate-100/80 border-l-4 border-signal' : ''
+                        isSelected ? 'bg-slate-100/80 border-l-4 border-primary' : ''
                       }`}
                     >
                       <div className="space-y-1 flex-1 min-w-0">
@@ -193,8 +193,8 @@ export function DisputesPage() {
                           <span className="font-mono text-xs font-semibold text-slate-800">
                             {d.dispute_id}
                           </span>
-                          <span className="text-xs text-ink-faint">·</span>
-                          <span className="font-mono text-[11px] text-ink-faint">
+                          <span className="text-xs text-muted-foreground/70">·</span>
+                          <span className="font-mono text-[11px] text-muted-foreground/70">
                             {d.obligation_id}
                           </span>
                         </div>
@@ -234,7 +234,7 @@ export function DisputesPage() {
                 <select
                   value={claimant}
                   onChange={(e) => setClaimant(e.target.value)}
-                  className="w-full border border-line-soft rounded p-1.5 text-xs bg-white"
+                  className="w-full border border-border/50 rounded p-1.5 text-xs bg-white"
                 >
                   <option value="BUYER_PRINCIPAL">BUYER_PRINCIPAL (Human Buyer)</option>
                   <option value="AGENT_OPERATOR">AGENT_OPERATOR (AI Provider)</option>
@@ -247,7 +247,7 @@ export function DisputesPage() {
                 <select
                   value={disputeReason}
                   onChange={(e) => setDisputeReason(e.target.value)}
-                  className="w-full border border-line-soft rounded p-1.5 text-xs bg-white"
+                  className="w-full border border-border/50 rounded p-1.5 text-xs bg-white"
                 >
                   <option value="unauthorized_agent_spend">Unauthorized Agent Spend (Friendly Fraud)</option>
                   <option value="not_as_described">Not As Described / Wrong SKU (Merchant Breach)</option>
@@ -262,7 +262,7 @@ export function DisputesPage() {
                   type="number"
                   value={disputedAmount}
                   onChange={(e) => setDisputedAmount(Number(e.target.value))}
-                  className="w-full border border-line-soft rounded p-1.5 text-xs bg-white font-mono"
+                  className="w-full border border-border/50 rounded p-1.5 text-xs bg-white font-mono"
                 />
               </div>
 
@@ -272,14 +272,14 @@ export function DisputesPage() {
                   rows={2}
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
-                  className="w-full border border-line-soft rounded p-1.5 text-xs bg-white"
+                  className="w-full border border-border/50 rounded p-1.5 text-xs bg-white"
                 />
               </div>
 
               <button
                 disabled={evaluating || !selectedDetail}
                 onClick={handleRunEvaluation}
-                className="w-full mt-2 bg-signal hover:bg-signal/90 text-white font-semibold py-2 px-3 rounded text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="w-full mt-2 bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-3 rounded text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Sparkles size={14} />
                 {evaluating ? 'Adjudicating Dispute...' : 'Run Liability Arbiter on Selected Obligation'}
@@ -355,7 +355,7 @@ export function DisputesPage() {
               {selectedDetail.consent_record && (
                 <Panel title="Cryptographic Consent Chain" meta="Human Delegation Proof">
                   <div className="p-4 space-y-2.5 text-xs">
-                    <div className="grid grid-cols-2 gap-3 pb-2 border-b border-line-soft">
+                    <div className="grid grid-cols-2 gap-3 pb-2 border-b border-border/50">
                       <div>
                         <span className="text-slate-500 block text-[11px]">Consent ID</span>
                         <span className="font-mono font-semibold text-slate-800">
@@ -406,7 +406,7 @@ export function DisputesPage() {
                         {selectedDetail.settlement_certificate.performance_verdict} (Class: {selectedDetail.settlement_certificate.aggregate_basis})
                       </span>
                     </div>
-                    <div className="space-y-1 text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded border border-line-soft">
+                    <div className="space-y-1 text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded border border-border/50">
                       <div><strong>Decision Hash:</strong> {selectedDetail.settlement_certificate.clearing_decision_hash.substring(0, 32)}...</div>
                       <div><strong>Certificate Hash:</strong> {selectedDetail.settlement_certificate.certificate_hash.substring(0, 32)}...</div>
                       <div><strong>Merchant Signature:</strong> Verified Ed25519</div>
@@ -425,7 +425,7 @@ export function DisputesPage() {
               </Panel>
             </div>
           ) : (
-            <div className="p-12 text-center text-ink-faint border border-dashed rounded-lg">
+            <div className="p-12 text-center text-muted-foreground/70 border border-dashed rounded-lg">
               Select a dispute from the left to view the complete evidence package.
             </div>
           )}

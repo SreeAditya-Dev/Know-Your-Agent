@@ -1,21 +1,21 @@
 import type { GateResult } from '../api'
 
 const dotColor: Record<string, string> = {
-  pass: 'border-allow bg-allow',
-  fail: 'border-deny bg-deny',
-  quarantine: 'border-quarantine bg-quarantine',
-  skipped: 'border-ink-faint bg-paper',
-  degraded: 'border-ink-faint bg-paper',
-  unknown: 'border-step-up bg-step-up',
+  pass: 'border-green-600 bg-green-600',
+  fail: 'border-destructive bg-destructive',
+  quarantine: 'border-orange-500 bg-orange-500',
+  skipped: 'border-ink-faint bg-card',
+  degraded: 'border-ink-faint bg-card',
+  unknown: 'border-blue-600 bg-blue-600',
 }
 
 const textColor: Record<string, string> = {
-  pass: 'text-allow',
-  fail: 'text-deny',
-  quarantine: 'text-quarantine',
-  skipped: 'text-ink-faint',
-  degraded: 'text-ink-faint',
-  unknown: 'text-step-up',
+  pass: 'text-green-600',
+  fail: 'text-destructive',
+  quarantine: 'text-orange-500',
+  skipped: 'text-muted-foreground/70',
+  degraded: 'text-muted-foreground/70',
+  unknown: 'text-blue-600',
 }
 
 export function GateTrace({ trace }: { trace: GateResult[] }) {
@@ -36,7 +36,7 @@ export function GateTrace({ trace }: { trace: GateResult[] }) {
               <span
                 className={`absolute top-[7px] left-[calc(50%+22px)] h-px max-md:hidden ${
                   isDim
-                    ? 'border-t border-dashed border-line bg-transparent'
+                    ? 'border-t border-dashed border-border bg-transparent'
                     : 'bg-line'
                 }`}
                 style={{ width: 'calc(100% - 22px)' }}
@@ -45,30 +45,30 @@ export function GateTrace({ trace }: { trace: GateResult[] }) {
             )}
             <span
               className={`w-[15px] h-[15px] rounded-full border-2 shrink-0 ${
-                dotColor[v] ?? 'border-line bg-paper'
+                dotColor[v] ?? 'border-border bg-card'
               }`}
               aria-hidden
             />
             <span
               className={`font-mono text-xs font-semibold ${
-                isDim ? 'text-ink-faint' : 'text-ink'
+                isDim ? 'text-muted-foreground/70' : 'text-foreground'
               }`}
             >
               {g.gate}
             </span>
             <span
               className={`font-mono text-[10px] font-semibold tracking-wide uppercase ${
-                textColor[v] ?? 'text-ink-soft'
+                textColor[v] ?? 'text-muted-foreground'
               }`}
             >
               {g.verdict}
             </span>
             {g.codes.length > 0 && (
-              <span className="font-mono text-[10.5px] text-deny">
+              <span className="font-mono text-[10.5px] text-destructive">
                 {g.codes.join(', ')}
               </span>
             )}
-            <span className="font-mono text-[10px] text-ink-faint">
+            <span className="font-mono text-[10px] text-muted-foreground/70">
               {g.elapsed_ms.toFixed(2)} ms
             </span>
           </li>

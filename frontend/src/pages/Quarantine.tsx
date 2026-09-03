@@ -18,19 +18,19 @@ export function QuarantinePage() {
     <>
       <section className="flex justify-between gap-5 items-end mb-6 max-md:flex-col max-md:items-start">
         <div>
-          <p className="m-0 mb-1.5 text-ink-faint font-mono text-[11px] font-medium tracking-widest uppercase">
+          <p className="m-0 mb-1.5 text-muted-foreground/70 font-mono text-[11px] font-medium tracking-widest uppercase">
             Human review
           </p>
           <h1 className="m-0 text-2xl font-semibold leading-tight tracking-tight">
             Quarantine queue
           </h1>
         </div>
-        <div className="rounded-sm px-3 py-1.5 font-mono text-xs font-semibold whitespace-nowrap bg-quarantine-bg text-quarantine">
+        <div className="rounded-sm px-3 py-1.5 font-mono text-xs font-semibold whitespace-nowrap bg-orange-500/10 text-orange-500">
           {quarantined.length} pending
         </div>
       </section>
 
-      <section className="bg-paper border border-line rounded-md overflow-hidden">
+      <section className="bg-card border border-border rounded-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="border-collapse w-full min-w-[600px]">
             <thead>
@@ -39,7 +39,7 @@ export function QuarantinePage() {
                   (h) => (
                     <th
                       key={h}
-                      className="px-4.5 py-3 text-left border-b border-line-soft bg-[#fafbfc] text-ink-faint font-mono text-[10.5px] uppercase font-semibold tracking-wide"
+                      className="px-4.5 py-3 text-left border-b border-border/50 bg-muted/30 text-muted-foreground/70 font-mono text-[10.5px] uppercase font-semibold tracking-wide"
                     >
                       {h}
                     </th>
@@ -52,7 +52,7 @@ export function QuarantinePage() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="text-ink-faint text-center px-5 py-9 text-[13px]"
+                    className="text-muted-foreground/70 text-center px-5 py-9 text-[13px]"
                   >
                     Nothing currently requires review.
                   </td>
@@ -63,22 +63,22 @@ export function QuarantinePage() {
                     key={d.decision_id}
                     className="transition-colors duration-150 hover:bg-[#f8f8fb] cursor-pointer"
                   >
-                    <td className="px-4.5 py-3 text-[13px] border-b border-line-soft font-mono text-[#2c333d]">
+                    <td className="px-4.5 py-3 text-[13px] border-b border-border/50 font-mono text-foreground/80">
                       {d.decision_id}
                     </td>
-                    <td className="px-4.5 py-3 text-[13px] border-b border-line-soft font-mono text-[#2c333d]">
+                    <td className="px-4.5 py-3 text-[13px] border-b border-border/50 font-mono text-foreground/80">
                       {d.agent_id}
                     </td>
-                    <td className="px-4.5 py-3 text-[13px] border-b border-line-soft font-mono text-[#2c333d]">
+                    <td className="px-4.5 py-3 text-[13px] border-b border-border/50 font-mono text-foreground/80">
                       {d.reason_codes.join(', ')}
                     </td>
-                    <td className="px-4.5 py-3 text-[13px] border-b border-line-soft text-[#2c333d]">
+                    <td className="px-4.5 py-3 text-[13px] border-b border-border/50 text-foreground/80">
                       {d.explanation}
                     </td>
-                    <td className="px-4.5 py-3 text-[13px] border-b border-line-soft">
+                    <td className="px-4.5 py-3 text-[13px] border-b border-border/50">
                       <Link
                         to={`/dashboard/decisions/${d.decision_id}`}
-                        className="text-signal text-xs font-semibold no-underline hover:underline cursor-pointer"
+                        className="text-primary text-xs font-semibold no-underline hover:underline cursor-pointer"
                       >
                         Inspect
                       </Link>

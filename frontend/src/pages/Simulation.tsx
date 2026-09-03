@@ -244,8 +244,8 @@ export function SimulationPage() {
       {/* Top Header */}
       <section className="flex justify-between gap-5 items-end max-md:flex-col max-md:items-start">
         <div>
-          <p className="m-0 mb-1.5 text-ink-faint font-mono text-[11px] font-medium tracking-widest uppercase flex items-center gap-1.5">
-            <Zap size={13} className="text-signal" />
+          <p className="m-0 mb-1.5 text-muted-foreground/70 font-mono text-[11px] font-medium tracking-widest uppercase flex items-center gap-1.5">
+            <Zap size={13} className="text-primary" />
             Interactive Gateway Sandbox
           </p>
           <h1 className="m-0 text-2xl font-semibold leading-tight tracking-tight">
@@ -267,7 +267,7 @@ export function SimulationPage() {
       >
         <div className="p-4.5 space-y-4">
           {/* Category Filter Pills */}
-          <div className="flex flex-wrap gap-2 pb-2 border-b border-line-soft">
+          <div className="flex flex-wrap gap-2 pb-2 border-b border-border/50">
             {(['ALL', 'LEGIT', 'INTEGRITY', 'MANDATE', 'VELOCITY', 'CONTENT', 'CLEARING'] as CategoryFilter[]).map(
               (cat) => (
                 <button
@@ -275,8 +275,8 @@ export function SimulationPage() {
                   onClick={() => setCategoryFilter(cat)}
                   className={`px-2.5 py-1 text-xs font-mono font-medium rounded transition-colors cursor-pointer ${
                     categoryFilter === cat
-                      ? 'bg-chrome text-paper font-semibold'
-                      : 'bg-paper text-ink-soft hover:bg-[#f1f3f6] border border-line-soft'
+                      ? 'bg-secondary text-secondary-foreground font-semibold'
+                      : 'bg-card text-muted-foreground hover:bg-muted/50 border border-border/50'
                   }`}
                 >
                   {cat}
@@ -298,8 +298,8 @@ export function SimulationPage() {
                   }}
                   className={`text-left p-3.5 rounded border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
                     isSelected
-                      ? 'border-signal bg-[#f6f7fd] ring-2 ring-signal/20'
-                      : 'border-line bg-paper hover:border-signal/40 hover:bg-[#fafbfc]'
+                      ? 'border-primary bg-[#f6f7fd] ring-2 ring-signal/20'
+                      : 'border-border bg-card hover:border-primary/40 hover:bg-muted/30'
                   }`}
                 >
                   <div>
@@ -314,7 +314,7 @@ export function SimulationPage() {
                             LEGIT
                           </span>
                         )}
-                        <span className="text-[10px] font-mono text-ink-faint">
+                        <span className="text-[10px] font-mono text-muted-foreground/70">
                           Gate: {sc.target_gate}
                         </span>
                       </div>
@@ -332,15 +332,15 @@ export function SimulationPage() {
                         {sc.expected_decision}
                       </span>
                     </div>
-                    <h3 className="text-[13px] font-semibold m-0 text-ink line-clamp-1">
+                    <h3 className="text-[13px] font-semibold m-0 text-foreground line-clamp-1">
                       {sc.title}
                     </h3>
-                    <p className="text-[11.5px] text-ink-soft m-0 mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-[11.5px] text-muted-foreground m-0 mt-1 line-clamp-2 leading-relaxed">
                       {sc.summary}
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] font-mono text-ink-faint pt-2 border-t border-line-soft">
+                  <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground/70 pt-2 border-t border-border/50">
                     <span>Tier: {sc.default_tier}</span>
                     <span>Amount: ₹{sc.default_amount_inr.toLocaleString('en-IN')}</span>
                   </div>
@@ -350,25 +350,25 @@ export function SimulationPage() {
           </div>
 
           {/* Custom Parameters Form Toggle */}
-          <div className="pt-2 border-t border-line-soft">
+          <div className="pt-2 border-t border-border/50">
             <button
               onClick={() => setShowCustomParams(!showCustomParams)}
-              className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-ink-soft hover:text-signal cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-muted-foreground hover:text-primary cursor-pointer"
             >
               <Sliders size={13} />
               {showCustomParams ? 'Hide custom parameters' : 'Customize request parameters (Tier, Amount)'}
             </button>
 
             {showCustomParams && (
-              <div className="mt-3 p-3 bg-[#f8f9fb] border border-line-soft rounded grid grid-cols-2 max-sm:grid-cols-1 gap-4">
+              <div className="mt-3 p-3 bg-muted/20 border border-border/50 rounded grid grid-cols-2 max-sm:grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-[11px] font-mono font-medium text-ink-soft uppercase mb-1">
+                  <label className="block text-[11px] font-mono font-medium text-muted-foreground uppercase mb-1">
                     Agent Trust Tier (Override)
                   </label>
                   <select
                     value={customTier}
                     onChange={(e) => setCustomTier(e.target.value)}
-                    className="w-full bg-paper border border-line rounded px-2.5 py-1.5 text-xs font-mono text-ink"
+                    className="w-full bg-card border border-border rounded px-2.5 py-1.5 text-xs font-mono text-foreground"
                   >
                     <option value="">Default ({selectedScenario?.default_tier ?? 'Auto'})</option>
                     <option value="T0">T0 (Unknown / First contact)</option>
@@ -378,7 +378,7 @@ export function SimulationPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-mono font-medium text-ink-soft uppercase mb-1">
+                  <label className="block text-[11px] font-mono font-medium text-muted-foreground uppercase mb-1">
                     Cart Amount in INR (Override)
                   </label>
                   <input
@@ -386,7 +386,7 @@ export function SimulationPage() {
                     placeholder={`Default: ₹${selectedScenario?.default_amount_inr ?? 2499}`}
                     value={customAmount}
                     onChange={(e) => setCustomAmount(e.target.value)}
-                    className="w-full bg-paper border border-line rounded px-2.5 py-1.5 text-xs font-mono text-ink"
+                    className="w-full bg-card border border-border rounded px-2.5 py-1.5 text-xs font-mono text-foreground"
                   />
                 </div>
               </div>
@@ -396,14 +396,14 @@ export function SimulationPage() {
       </Panel>
 
       {/* Playback & Control Bar */}
-      <section className="bg-paper border border-line rounded-md p-4 flex flex-wrap items-center justify-between gap-4">
+      <section className="bg-card border border-border rounded-md p-4 flex flex-wrap items-center justify-between gap-4">
         {/* Left: Action Buttons */}
         <div className="flex items-center gap-2">
           {!simResult || currentStepIndex === -1 ? (
             <button
               onClick={startSimulation}
               disabled={isExecuting}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-signal hover:bg-signal/90 text-white rounded font-medium text-xs tracking-wide uppercase transition-colors cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded font-medium text-xs tracking-wide uppercase transition-colors cursor-pointer disabled:opacity-50"
             >
               <Play size={14} />
               Run Simulation
@@ -413,7 +413,7 @@ export function SimulationPage() {
               {playbackMode === 'stream' && (
                 <button
                   onClick={handlePauseResume}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-chrome text-paper hover:bg-chrome-line rounded font-medium text-xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded font-medium text-xs cursor-pointer"
                 >
                   {isPlaying ? <Pause size={14} /> : <Play size={14} />}
                   {isPlaying ? 'Pause' : 'Resume'}
@@ -423,7 +423,7 @@ export function SimulationPage() {
               <button
                 onClick={handleStepPrev}
                 disabled={currentStepIndex <= 0 || isPlaying}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-paper border border-line hover:bg-[#f1f3f6] rounded text-xs font-medium cursor-pointer disabled:opacity-40"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-card border border-border hover:bg-muted/50 rounded text-xs font-medium cursor-pointer disabled:opacity-40"
                 title="Previous Gate"
               >
                 <ChevronLeft size={14} />
@@ -433,7 +433,7 @@ export function SimulationPage() {
               <button
                 onClick={handleStepNext}
                 disabled={!simResult || currentStepIndex >= simResult.steps.length - 1 || isPlaying}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-chrome text-paper hover:bg-chrome-line rounded text-xs font-medium cursor-pointer disabled:opacity-40"
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded text-xs font-medium cursor-pointer disabled:opacity-40"
                 title="Next Gate"
               >
                 Next Gate
@@ -442,7 +442,7 @@ export function SimulationPage() {
 
               <button
                 onClick={handleReset}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-paper border border-line hover:bg-rose-50 text-rose-700 rounded text-xs font-medium cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-card border border-border hover:bg-rose-50 text-rose-700 rounded text-xs font-medium cursor-pointer"
                 title="Reset simulation"
               >
                 <RotateCcw size={13} />
@@ -454,8 +454,8 @@ export function SimulationPage() {
 
         {/* Middle: Mode Switcher */}
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono uppercase text-ink-faint font-semibold">Mode:</span>
-          <div className="inline-flex rounded border border-line bg-paper p-0.5">
+          <span className="text-[11px] font-mono uppercase text-muted-foreground/70 font-semibold">Mode:</span>
+          <div className="inline-flex rounded border border-border bg-card p-0.5">
             {(['stream', 'interactive', 'instant'] as PlaybackMode[]).map((mode) => (
               <button
                 key={mode}
@@ -468,8 +468,8 @@ export function SimulationPage() {
                 }}
                 className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded transition-colors cursor-pointer ${
                   playbackMode === mode
-                    ? 'bg-chrome text-paper font-semibold'
-                    : 'text-ink-soft hover:text-ink'
+                    ? 'bg-secondary text-secondary-foreground font-semibold'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {mode === 'stream' ? 'Auto Stream' : mode === 'interactive' ? 'Step-by-Step' : 'Instant'}
@@ -481,7 +481,7 @@ export function SimulationPage() {
             <select
               value={playbackSpeed}
               onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-              className="bg-paper border border-line rounded px-2 py-1 text-xs font-mono text-ink"
+              className="bg-card border border-border rounded px-2 py-1 text-xs font-mono text-foreground"
             >
               <option value={400}>Fast (400ms)</option>
               <option value={800}>Normal (800ms)</option>
@@ -492,14 +492,14 @@ export function SimulationPage() {
         </div>
 
         {/* Right: Active Status Indicator */}
-        <div className="text-right font-mono text-xs text-ink-soft">
+        <div className="text-right font-mono text-xs text-muted-foreground">
           {simResult ? (
             <span>
               Step {Math.max(0, currentStepIndex + 1)} / {simResult.steps.length}
-              {isComplete && <span className="ml-2 font-bold text-signal">• Finished</span>}
+              {isComplete && <span className="ml-2 font-bold text-primary">• Finished</span>}
             </span>
           ) : (
-            <span className="text-ink-faint">Ready to simulate</span>
+            <span className="text-muted-foreground/70">Ready to simulate</span>
           )}
         </div>
       </section>
@@ -536,7 +536,7 @@ export function SimulationPage() {
                       idx <= currentStepIndex ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
                     } ${
                       isSelectedForInspect
-                        ? 'ring-2 ring-signal border-signal bg-signal/5'
+                        ? 'ring-2 ring-signal border-primary bg-primary/5'
                         : styling.bg + ' ' + styling.border
                     }`}
                   >
@@ -544,7 +544,7 @@ export function SimulationPage() {
                     {idx < simResult.steps.length - 1 && (
                       <span
                         className={`absolute top-[28px] left-[calc(50%+24px)] h-0.5 w-[calc(100%-48px)] z-0 ${
-                          idx < currentStepIndex ? 'bg-signal' : 'bg-line border-dashed'
+                          idx < currentStepIndex ? 'bg-primary' : 'bg-line border-dashed'
                         }`}
                         aria-hidden
                       />
@@ -567,10 +567,10 @@ export function SimulationPage() {
                       )}
                     </div>
 
-                    <span className="font-mono text-xs font-bold text-ink">
+                    <span className="font-mono text-xs font-bold text-foreground">
                       {step.step_id}
                     </span>
-                    <span className="text-[11px] font-medium text-ink-soft line-clamp-1 mb-1">
+                    <span className="text-[11px] font-medium text-muted-foreground line-clamp-1 mb-1">
                       {step.name.split(' ')[0]}
                     </span>
 
@@ -584,7 +584,7 @@ export function SimulationPage() {
                     </span>
 
                     {isPast && (
-                      <span className="font-mono text-[9.5px] text-ink-faint mt-1">
+                      <span className="font-mono text-[9.5px] text-muted-foreground/70 mt-1">
                         {step.elapsed_ms.toFixed(2)} ms
                       </span>
                     )}
@@ -608,14 +608,14 @@ export function SimulationPage() {
               {/* Verdict Header Bar */}
               <div
                 className={`p-3 rounded border flex items-center justify-between gap-3 ${
-                  STEP_COLORS[activeInspectingStep.verdict]?.bg || 'bg-paper'
-                } ${STEP_COLORS[activeInspectingStep.verdict]?.border || 'border-line'}`}
+                  STEP_COLORS[activeInspectingStep.verdict]?.bg || 'bg-card'
+                } ${STEP_COLORS[activeInspectingStep.verdict]?.border || 'border-border'}`}
               >
                 <div>
-                  <p className="text-[11px] font-mono uppercase tracking-wide text-ink-soft m-0">
+                  <p className="text-[11px] font-mono uppercase tracking-wide text-muted-foreground m-0">
                     {activeInspectingStep.description}
                   </p>
-                  <p className="text-xs font-medium text-ink m-0 mt-1">
+                  <p className="text-xs font-medium text-foreground m-0 mt-1">
                     {activeInspectingStep.explanation}
                   </p>
                 </div>
@@ -626,7 +626,7 @@ export function SimulationPage() {
 
               {/* Assertion Checklist */}
               <div>
-                <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-ink-faint mb-2">
+                <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
                   Evaluated Assertions ({activeInspectingStep.assertions.length})
                 </h4>
                 <ul className="list-none m-0 p-0 space-y-2">
@@ -677,7 +677,7 @@ export function SimulationPage() {
               {/* Step Diagnostics JSON Drawer */}
               {Object.keys(activeInspectingStep.metadata).length > 0 && (
                 <div>
-                  <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-ink-faint mb-1.5">
+                  <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1.5">
                     Context Metadata
                   </h4>
                   <pre className="m-0 p-3 bg-[#1e222b] text-[#e2e8f0] rounded text-[11px] font-mono overflow-x-auto">
@@ -731,13 +731,13 @@ export function SimulationPage() {
 
       {/* Final Outcome & Sealed Obligation Card */}
       {isComplete && simResult && (
-        <section className="bg-paper border-2 border-line rounded-lg p-6 space-y-5 animate-[rise_200ms_ease-out]">
-          <div className="flex justify-between items-center max-md:flex-col max-md:items-start gap-4 pb-4 border-b border-line-soft">
+        <section className="bg-card border-2 border-border rounded-lg p-6 space-y-5 animate-[rise_200ms_ease-out]">
+          <div className="flex justify-between items-center max-md:flex-col max-md:items-start gap-4 pb-4 border-b border-border/50">
             <div>
-              <p className="m-0 text-ink-faint font-mono text-[11px] font-medium tracking-widest uppercase">
+              <p className="m-0 text-muted-foreground/70 font-mono text-[11px] font-medium tracking-widest uppercase">
                 Final Adjudication Outcome
               </p>
-              <h2 className="m-0 text-xl font-bold tracking-tight text-ink mt-0.5">
+              <h2 className="m-0 text-xl font-bold tracking-tight text-foreground mt-0.5">
                 {simResult.scenario_title}
               </h2>
             </div>
@@ -746,7 +746,7 @@ export function SimulationPage() {
             </div>
           </div>
 
-          <p className="m-0 text-sm text-ink-soft leading-relaxed">
+          <p className="m-0 text-sm text-muted-foreground leading-relaxed">
             {simResult.explanation}
           </p>
 
@@ -800,7 +800,7 @@ export function SimulationPage() {
           <div className="pt-2">
             <button
               onClick={() => setShowRawJson(!showRawJson)}
-              className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-signal hover:underline cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-primary hover:underline cursor-pointer"
             >
               <FileCode size={13} />
               {showRawJson ? 'Hide raw RFC 9421 request payload' : 'Inspect raw signed HTTP request & RFC 9421 headers'}

@@ -27,7 +27,7 @@ export function Dashboard() {
     <>
       <section className="flex justify-between gap-5 items-end mb-6 max-md:flex-col max-md:items-start">
         <div>
-          <p className="m-0 mb-1.5 text-ink-faint font-mono text-[11px] font-medium tracking-widest uppercase">
+          <p className="m-0 mb-1.5 text-muted-foreground/70 font-mono text-[11px] font-medium tracking-widest uppercase">
             Merchant control plane
           </p>
           <h1 className="m-0 text-2xl font-semibold leading-tight tracking-tight">
@@ -37,15 +37,15 @@ export function Dashboard() {
         <div className="flex items-center gap-3 max-md:flex-wrap">
           <Link
             to="/dashboard/simulation"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-signal hover:bg-signal/90 text-white rounded text-xs font-semibold no-underline transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white rounded text-xs font-semibold no-underline transition-colors cursor-pointer"
           >
             Launch Live Simulation →
           </Link>
           <div
             className={`rounded-sm px-3 py-1.5 font-mono text-xs font-semibold whitespace-nowrap ${
               m.operations.ledger_ok
-                ? 'bg-allow-bg text-allow'
-                : 'bg-deny-bg text-deny'
+                ? 'bg-green-500/10 text-green-600'
+                : 'bg-destructive/10 text-destructive'
             }`}
           >
             Ledger {m.operations.ledger_ok ? 'intact' : 'needs review'}
@@ -77,7 +77,7 @@ export function Dashboard() {
                   {['Decision', 'Agent', 'Reason', 'Latency', ''].map((h) => (
                     <th
                       key={h}
-                      className="px-4.5 py-3 text-left border-b border-line-soft bg-[#fafbfc] text-ink-faint font-mono text-[10.5px] uppercase font-semibold tracking-wide"
+                      className="px-4.5 py-3 text-left border-b border-border/50 bg-muted/30 text-muted-foreground/70 font-mono text-[10.5px] uppercase font-semibold tracking-wide"
                     >
                       {h}
                     </th>
@@ -89,7 +89,7 @@ export function Dashboard() {
                   <tr>
                     <td
                       colSpan={5}
-                      className="text-ink-faint text-center px-5 py-9 text-[13px]"
+                      className="text-muted-foreground/70 text-center px-5 py-9 text-[13px]"
                     >
                       No agent purchases have run through the gateway yet.
                     </td>
@@ -100,22 +100,22 @@ export function Dashboard() {
                       key={d.decision_id}
                       className="transition-colors duration-150 hover:bg-[#f8f8fb] cursor-pointer"
                     >
-                      <td className="px-4.5 py-3 text-[13px] border-b border-line-soft">
+                      <td className="px-4.5 py-3 text-[13px] border-b border-border/50">
                         <Badge value={d.decision} />
                       </td>
-                      <td className="px-4.5 py-3 text-[13px] border-b border-line-soft font-mono text-[#2c333d]">
+                      <td className="px-4.5 py-3 text-[13px] border-b border-border/50 font-mono text-foreground/80">
                         {d.agent_id}
                       </td>
-                      <td className="px-4.5 py-3 text-[13px] border-b border-line-soft font-mono text-[#2c333d]">
+                      <td className="px-4.5 py-3 text-[13px] border-b border-border/50 font-mono text-foreground/80">
                         {d.reason_codes.join(', ') || 'Verified'}
                       </td>
-                      <td className="px-4.5 py-3 text-[13px] border-b border-line-soft font-mono text-[#2c333d] tabular-nums">
+                      <td className="px-4.5 py-3 text-[13px] border-b border-border/50 font-mono text-foreground/80 tabular-nums">
                         {d.latency_ms.toFixed(2)} ms
                       </td>
-                      <td className="px-4.5 py-3 text-[13px] border-b border-line-soft">
+                      <td className="px-4.5 py-3 text-[13px] border-b border-border/50">
                         <Link
                           to={`/dashboard/decisions/${d.decision_id}`}
-                          className="text-signal text-xs font-semibold no-underline hover:underline cursor-pointer"
+                          className="text-primary text-xs font-semibold no-underline hover:underline cursor-pointer"
                         >
                           Inspect
                         </Link>
@@ -128,12 +128,12 @@ export function Dashboard() {
           </div>
         </Panel>
 
-        <aside className="bg-paper border border-line rounded-md overflow-hidden">
-          <div className="min-h-[50px] px-4.5 py-3.5 flex items-center justify-between gap-4 border-b border-line-soft">
+        <aside className="bg-card border border-border rounded-md overflow-hidden">
+          <div className="min-h-[50px] px-4.5 py-3.5 flex items-center justify-between gap-4 border-b border-border/50">
             <h2 className="text-sm font-semibold m-0">Measured posture</h2>
             <Link
               to="/dashboard/metrics"
-              className="text-signal text-xs font-semibold no-underline hover:underline cursor-pointer"
+              className="text-primary text-xs font-semibold no-underline hover:underline cursor-pointer"
             >
               Details
             </Link>
@@ -149,11 +149,11 @@ export function Dashboard() {
               <div
                 key={dt}
                 className={`flex justify-between gap-4 py-3 ${
-                  i < arr.length - 1 ? 'border-b border-line-soft' : ''
+                  i < arr.length - 1 ? 'border-b border-border/50' : ''
                 }`}
               >
-                <dt className="text-ink-soft text-[13px]">{dt}</dt>
-                <dd className="m-0 text-ink font-mono text-[13px] font-medium text-right break-words">
+                <dt className="text-muted-foreground text-[13px]">{dt}</dt>
+                <dd className="m-0 text-foreground font-mono text-[13px] font-medium text-right break-words">
                   {dd}
                 </dd>
               </div>
