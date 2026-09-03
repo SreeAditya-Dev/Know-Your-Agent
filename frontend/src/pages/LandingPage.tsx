@@ -1,18 +1,31 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Activity, ShieldCheck, Zap, ArrowRight, ShieldAlert } from 'lucide-react';
+import { Activity, ShieldCheck, Zap, ArrowRight, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const [isMuted, setIsMuted] = useState(true);
   const heroRef = useRef<HTMLDivElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const howItWorksRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
+
+  const toggleSound = () => {
+    if (videoRef.current) {
+      const nextMuted = !isMuted;
+      videoRef.current.muted = nextMuted;
+      setIsMuted(nextMuted);
+      if (!nextMuted) {
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  };
 
   useEffect(() => {
     // Hero animations
@@ -25,9 +38,9 @@ export function LandingPage() {
       );
     }
 
-    if (videoRef.current) {
+    if (videoContainerRef.current) {
       gsap.fromTo(
-        videoRef.current,
+        videoContainerRef.current,
         { y: 40, opacity: 0, scale: 0.95 },
         { y: 0, opacity: 1, scale: 1, duration: 1.2, ease: 'power3.out', delay: 0.5 }
       );
@@ -203,26 +216,72 @@ export function LandingPage() {
         {/* Video Container */}
         <div 
           id="demo-video"
-          ref={videoRef} 
-          className="mt-20 w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl border border-border/50 bg-card"
+          ref={videoContainerRef} 
+          className="mt-20 w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl border border-border bg-card text-left"
         >
-          <div className="w-full h-10 bg-muted/50 border-b border-border flex items-center px-4 gap-2">
-            <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-destructive/80"></div>
-              <div className="w-3 h-3 rounded-full bg-orange-400/80"></div>
-              <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+          <div className="w-full h-11 bg-muted/60 border-b border-border flex items-center justify-between px-4">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-destructive/80"></div>
+                <div className="w-3 h-3 rounded-full bg-amber-400/80"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+              </div>
+              <span className="text-[11px] font-mono text-muted-foreground ml-2 hidden sm:inline-block">
+                brag_product_demo.mp4
+              </span>
             </div>
+
+            {/* Sound Toggle Control in Window Header */}
+            <button
+              onClick={toggleSound}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium transition-all duration-200 border bg-background/90 hover:bg-background text-foreground shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+              aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+            >
+              {isMuted ? (
+                <>
+                  <VolumeX className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-muted-foreground text-[11px]">Sound: OFF (Click to Unmute)</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-3.5 h-3.5 text-primary animate-pulse" />
+                  <span className="text-primary text-[11px] font-semibold">Sound: ON</span>
+                </>
+              )}
+            </button>
           </div>
-          <video 
-            autoPlay 
-            loop 
-            muted 
-            playsInline
-            className="w-full aspect-video object-cover"
-          >
-            <source src="/brag.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+
+          <div className="relative group">
+            <video 
+              ref={videoRef}
+              autoPlay 
+              loop 
+              muted={isMuted}
+              playsInline
+              className="w-full aspect-video object-cover"
+            >
+              <source src="/brag.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+
+            {/* Floating Sound Toggle Pill on Video */}
+            <button
+              onClick={toggleSound}
+              className="absolute bottom-4 right-4 z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/75 hover:bg-black/90 text-white backdrop-blur-md text-xs font-medium border border-white/20 transition-all duration-200 active:scale-95 shadow-lg cursor-pointer"
+            >
+              {isMuted ? (
+                <>
+                  <VolumeX className="w-4 h-4 text-white/80" />
+                  <span>Unmute Audio</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-4 h-4 text-primary animate-pulse" />
+                  <span>Mute Audio</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </section>
 
