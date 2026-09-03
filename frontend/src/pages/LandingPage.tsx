@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Activity, ShieldCheck, Zap, ArrowRight, ShieldAlert, Volume2, VolumeX } from 'lucide-react';
+import Antigravity from '../components/Antigravity';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -175,42 +176,60 @@ export function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section ref={heroRef} className="pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8 gsap-hero border border-primary/20">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-          </span>
-          v2.0 is now live
+      <section ref={heroRef} className="pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col items-center text-center relative">
+        {/* Antigravity 3D Particle Canvas behind Hero Text */}
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[520px] pointer-events-auto z-0 opacity-75">
+          <Antigravity
+            count={300}
+            magnetRadius={6}
+            ringRadius={7}
+            waveSpeed={0.4}
+            waveAmplitude={1}
+            particleSize={1.5}
+            lerpSpeed={0.05}
+            color={'#f38020'}
+            autoAnimate={true}
+            particleVariance={1}
+          />
         </div>
-        
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 max-w-4xl text-foreground gsap-hero">
-          Build Trust in Your <br className="hidden md:block" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-orange-400">Autonomous Agents</span>
-        </h1>
-        
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 gsap-hero">
-          The enterprise platform for testing, validating, and managing AI agents. 
-          Ensure safety, compliance, and performance before hitting production.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row items-center gap-4 gsap-hero w-full sm:w-auto">
-          <button 
-            onClick={() => navigate('/store')}
-            className="w-full sm:w-auto px-8 py-3.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-all duration-200 active:scale-95 shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
-          >
-            Start Validating
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={() => {
-              const video = document.getElementById('demo-video');
-              video?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }}
-            className="w-full sm:w-auto px-8 py-3.5 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/90 transition-all duration-200 active:scale-95 shadow-sm border border-border"
-          >
-            Watch Demo
-          </button>
+
+        <div className="relative z-10 flex flex-col items-center pointer-events-none">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-8 gsap-hero border border-primary/20 backdrop-blur-xs pointer-events-auto">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+            </span>
+            v2.0 is now live
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 max-w-4xl text-foreground gsap-hero">
+            Build Trust in Your <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-orange-400">Autonomous Agents</span>
+          </h1>
+          
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 gsap-hero">
+            The enterprise platform for testing, validating, and managing AI agents. 
+            Ensure safety, compliance, and performance before hitting production.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-4 gsap-hero w-full sm:w-auto pointer-events-auto">
+            <button 
+              onClick={() => navigate('/store')}
+              className="w-full sm:w-auto px-8 py-3.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-all duration-200 active:scale-95 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              Start Validating
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={() => {
+                const video = document.getElementById('demo-video');
+                video?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+              className="w-full sm:w-auto px-8 py-3.5 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/90 transition-all duration-200 active:scale-95 shadow-sm border border-border cursor-pointer"
+            >
+              Watch Demo
+            </button>
+          </div>
         </div>
 
         {/* Video Container */}
