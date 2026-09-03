@@ -169,7 +169,7 @@ export function StorePage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
                 <Flame className="text-white" size={22} />
               </div>
               <div>
@@ -225,7 +225,7 @@ export function StorePage() {
             <ShieldCheck size={13} />
             <span>AP2 Intent & Cart Mandates: ACTIVE</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-950/40 text-purple-300 border border-purple-800/60">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
             <Zap size={13} />
             <span>UPI Reserve Pay (Single Block Multi Debit): READY</span>
           </div>
@@ -311,9 +311,9 @@ export function StorePage() {
               setAgentPrompt(p)
               handleRunAgentPrompt(p)
             }}
-            className="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-purple-300 border border-purple-800/40 flex items-center gap-1 transition cursor-pointer"
+            className="px-2.5 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-primary border border-primary/20 flex items-center gap-1 transition cursor-pointer"
           >
-            <Zap size={12} className="text-purple-400" />
+            <Zap size={12} className="text-primary" />
             <span>⚡ "Buy Flyer Runner using my connected UPI auto-pay"</span>
           </button>
 
@@ -822,18 +822,18 @@ export function StorePage() {
                     onClick={() => setSelectedPaymentRail('RESERVE_PAY')}
                     className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
                       selectedPaymentRail === 'RESERVE_PAY'
-                        ? 'bg-purple-950/40 border-purple-500 text-white'
+                        ? 'bg-primary/10 border-primary text-white'
                         : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Zap size={16} className="text-purple-400" />
+                      <Zap size={16} className="text-primary" />
                       <div>
                         <div className="text-xs font-bold">UPI Reserve Pay (NPCI Autonomous)</div>
                         <div className="text-[10px] opacity-70">Pre-authorized single block multi debit mandate</div>
                       </div>
                     </div>
-                    {selectedPaymentRail === 'RESERVE_PAY' && <Check size={16} className="text-purple-400" />}
+                    {selectedPaymentRail === 'RESERVE_PAY' && <Check size={16} className="text-primary" />}
                   </div>
 
                   <div
@@ -1031,7 +1031,7 @@ export function StorePage() {
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-white flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                    <span className="w-2 h-2 rounded-full bg-primary"></span>
                     Option 2: Claude Desktop Config (`claude_desktop_config.json`)
                   </span>
                   <button
@@ -1058,7 +1058,7 @@ export function StorePage() {
                     <span>Copy JSON</span>
                   </button>
                 </div>
-                <pre className="p-2.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-purple-300 overflow-x-auto">
+                <pre className="p-2.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-primary overflow-x-auto">
 {`{
   "mcpServers": {
     "ShopPayAgent": {
